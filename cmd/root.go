@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/posilva/simpleboards/cmd/leaderboards/config"
 	"github.com/posilva/simpleboards/internal/adapters/input/handler"
 	"github.com/posilva/simpleboards/internal/adapters/output/configprovider"
 	"github.com/posilva/simpleboards/internal/adapters/output/repository"
@@ -24,6 +25,8 @@ var rootCmd = &cobra.Command{
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
 		r := gin.Default()
+		r.Use(gin.Logger())
+		r.Use(gin.Recovery())
 
 		service, err := createService()
 		if err != nil {
@@ -36,7 +39,7 @@ var rootCmd = &cobra.Command{
 		api.PUT("/score/:leaderboard", httpHandler.HandlePutScore)
 		api.GET("/scores/:leaderboard", httpHandler.HandleGetScores)
 
-		err = r.Run("0.0.0.0:8081")
+		err = r.Run(config.GetAddr())
 		if err != nil {
 			panic(fmt.Errorf("failed to start the server %v", err))
 		}
