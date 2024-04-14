@@ -1,6 +1,6 @@
 locals {
   region      = var.region
-  name        = var.service_name
+  name        = var.name
   namespace   = var.namespace
   stage       = var.stage
   environment = var.environment

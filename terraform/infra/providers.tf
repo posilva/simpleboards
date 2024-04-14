@@ -31,10 +31,9 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "5.0.0"
+      version = "~> 5.0"
     }
   }
 }
 // Used by get the current aws number account.
-data "aws_caller_identity" "current" {
-}
+data "aws_caller_identity" "current" {}
