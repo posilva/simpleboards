@@ -18,7 +18,7 @@ module "ecs_cluster" {
       instance_type               = "t3.medium"
       security_group_ids          = [module.cluster_nodes_sg.id]
       subnet_ids                  = module.subnets.private_subnet_ids
-      min_size                    = 1
+      min_size                    = 0
       max_size                    = 2
     }
   }

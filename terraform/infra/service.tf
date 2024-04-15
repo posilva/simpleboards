@@ -61,3 +61,4 @@ module "ecs_service" {
     container_port   = var.target_group_port
   }]
 }
+
