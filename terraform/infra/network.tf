@@ -37,7 +37,7 @@ module "subnets" {
   ipv6_enabled            = false
   ipv6_egress_only_igw_id = [module.vpc.ipv6_egress_only_igw_id]
   ipv6_cidr_block         = [module.vpc.vpc_ipv6_cidr_block]
-  nat_gateway_enabled     = false
+  nat_gateway_enabled     = true
   nat_instance_enabled    = false
   route_create_timeout    = "5m"
   route_delete_timeout    = "10m"

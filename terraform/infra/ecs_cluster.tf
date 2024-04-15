@@ -8,18 +8,16 @@ module "ecs_cluster" {
   name        = local.name
   environment = local.environment
 
-
-
   container_insights_enabled = true
   # TODO: disabled for now as ec2 provider gives more control to debug
   capacity_providers_fargate      = false
   capacity_providers_fargate_spot = false
   capacity_providers_ec2 = {
     default = {
-      associate_public_ip_address = true
+      associate_public_ip_address = false
       instance_type               = "t3.medium"
       security_group_ids          = [module.cluster_nodes_sg.id]
-      subnet_ids                  = module.subnets.public_subnet_ids
+      subnet_ids                  = module.subnets.private_subnet_ids
       min_size                    = 1
       max_size                    = 2
     }
@@ -34,7 +32,6 @@ module "cluster_nodes_sg" {
   stage       = local.stage
   name        = local.name
   environment = local.environment
-
 
   # Security Group names must be unique within a VPC.
   # This module follows Cloud Posse naming conventions and generates the name
@@ -55,7 +52,7 @@ module "cluster_nodes_sg" {
         key                      = "intra_cluster"
         type                     = "ingress"
         source_security_group_id = module.alb.security_group_id
-        from_port                = 80
+        from_port                = 80 # TODO: should be configurable
         to_port                  = 80
         protocol                 = "tcp"
         cidr_blocks              = []

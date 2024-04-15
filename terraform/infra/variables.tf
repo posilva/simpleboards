@@ -122,3 +122,58 @@ variable "target_group_port" {
   description = "Target group port"
   default     = 80
 }
+
+variable "service_container_image" {
+  type        = string
+  description = "Service Container Image "
+  default     = "public.ecr.aws/nginx/nginx:1-alpine3.18"
+}
+
+variable "service_container_port" {
+  type        = number
+  description = "Service Container Port"
+  default     = 80
+}
+
+variable "service_container_port_protocol" {
+  type        = string
+  description = "Service Container Port Protocol"
+  default     = "tcp"
+}
+
+variable "cache_cluster_size" {
+  type        = number
+  description = "Cache cluster size"
+  default     = 1
+}
+
+variable "cache_instance_type" {
+  type        = string
+  description = "Elastic cache instance type"
+  default     = "cache.t4g.micro"
+}
+
+variable "cache_engine_version" {
+  type        = string
+  description = "Redis engine version"
+  default     = "7.1"
+}
+
+variable "cache_family" {
+  type        = string
+  description = "Redis family"
+  default     = "redis7"
+}
+
+variable "cache_at_rest_encryption_enabled" {
+  type        = bool
+  description = "Redis at rest encryption enabled"
+  default     = true
+}
+
+variable "cache_transit_encryption_enabled" {
+  type        = bool
+  description = "Redis transit encryption enabled"
+  default     = false
+}
+

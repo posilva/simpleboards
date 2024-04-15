@@ -4,7 +4,7 @@ module "container_definition" {
   version = "0.61.1"
 
   container_name               = local.name
-  container_image              = "public.ecr.aws/nginx/nginx:1-alpine3.18"
+  container_image              = var.service_container_image
   container_memory             = 256
   container_cpu                = 256
   container_memory_reservation = 256
@@ -37,7 +37,7 @@ module "ecs_service" {
   vpc_id      = module.vpc.vpc_id
 
   # TODO: this should be in a private subnet
-  subnet_ids   = module.subnets.public_subnet_ids
+  subnet_ids   = module.subnets.private_subnet_ids
   network_mode = "awsvpc"
 
   security_group_ids = [module.cluster_nodes_sg.id]
