@@ -4,14 +4,16 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/gin-gonic/gin"
-	"github.com/posilva/simpleboards/cmd/leaderboards/config"
+	"github.com/posilva/simpleboards/cmd/simpleboards/config"
 	"github.com/posilva/simpleboards/internal/adapters/input/handler"
 	"github.com/posilva/simpleboards/internal/adapters/output/configprovider"
+	"github.com/posilva/simpleboards/internal/adapters/output/logging"
 	"github.com/posilva/simpleboards/internal/adapters/output/repository"
 	"github.com/posilva/simpleboards/internal/adapters/output/scoreboard"
 	"github.com/posilva/simpleboards/internal/core/services"
-	"github.com/posilva/simpleboards/internal/testutil"
 	"github.com/spf13/cobra"
 )
 
@@ -69,16 +71,21 @@ func init() {
 
 func createService() (*services.LeaderboardsService, error) {
 	// TODO: For local testing
-	settings := testutil.NewDefaultDynamoDBSettings()
+
+	cfg := aws.NewConfig()
+	settings := repository.DynamoDBSettings{
+		Client: dynamodb.NewFromConfig(*cfg),
+		Logger: logging.NewSimpleLogger(),
+		Table:  config.GetDynamoDBTableName(),
+	}
 	repo, err := repository.NewDynamoDBRepository(settings)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create repositort %v", err)
+		return nil, fmt.Errorf("failed to create dynamodb repository: %v", err)
 	}
-
-	config := configprovider.NewSimpleConfigProvider(repo, settings.Logger)
-	scoreboard, err := scoreboard.NewRedisScoreboard("localhost:6379")
+	configProvider := configprovider.NewSimpleConfigProvider(repo, settings.Logger)
+	scoreboard, err := scoreboard.NewRedisScoreboard(config.GetRedisAddr())
 	if err != nil {
 		return nil, fmt.Errorf("failed to create redis scoreboard: %v", err)
 	}
-	return services.NewLeaderboardsService(repo, scoreboard, config), nil
+	return services.NewLeaderboardsService(repo, scoreboard, configProvider), nil
 }
