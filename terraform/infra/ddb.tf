@@ -21,3 +21,18 @@ module "dynamodb_table" {
     }
   ]
 }
+
+data "aws_iam_policy_document" "dynamodb-full-access" {
+  statement {
+    effect  = "Allow"
+    actions = ["dynamodb:*"]
+    resources = [
+      "${module.dynamodb_table.table_arn}"
+    ]
+  }
+}
+resource "aws_iam_policy" "dynamodb-full-access" {
+  name        = "dynamodb-all-access"
+  description = "Dynamodb All Access"
+  policy      = data.aws_iam_policy_document.dynamodb-full-access.json
+}

@@ -113,6 +113,3 @@ module "alb" {
 
   access_logs_enabled = false
 }
-
-
-
