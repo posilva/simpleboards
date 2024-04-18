@@ -30,7 +30,7 @@ func TestReportScore(t *testing.T) {
 	configProvider := defaultConfigProviderMock(ctrl, lbName)
 	nameEpoch, err := GetLeaderboardNameWithEpoch(lbName, domain.Hourly)
 	assert.NoError(t, err)
-	repo.EXPECT().Add(entryID, nameEpoch, value).Return(value, nil)
+	repo.EXPECT().Add(entryID, nameEpoch, value).Return(domain.ScoreUpdate{Score: value}, nil)
 	scoreboard.EXPECT().AddScore(entryID, nameEpoch, value).Return(nil)
 
 	lbSrv := NewLeaderboardsService(repo, scoreboard, configProvider)

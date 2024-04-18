@@ -113,7 +113,7 @@ func TestDynamoDBRepository_Last(t *testing.T) {
 	client := testmocks.NewMockDynamoDBClient(ctrl)
 
 	attributes := make(map[string]types.AttributeValue)
-	attributes["score"] = &types.AttributeValueMemberN{Value: "1"}
+	attributes["score"] = &types.AttributeValueMemberN{Value: "10"}
 
 	client.EXPECT().UpdateItem(ctx, gomock.Any()).Return(
 		&dynamodb.UpdateItemOutput{

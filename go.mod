@@ -10,7 +10,8 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.30.4
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-co-op/gocron v1.37.0
-	github.com/redis/rueidis v1.0.31
+	github.com/redis/rueidis v1.0.34
+	github.com/redis/rueidis/mock v1.0.34
 	github.com/rs/zerolog v1.32.0
 	github.com/segmentio/ksuid v1.0.4
 	github.com/spf13/cobra v1.8.0

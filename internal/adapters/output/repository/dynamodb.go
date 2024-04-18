@@ -194,12 +194,12 @@ func (r *DynamoDBRepository) Last(entry string, leaderboard string, value float6
 	if err != nil {
 		return domain.ScoreUpdate{}, fmt.Errorf("failed to build update expression: %w", err)
 	}
+
 	input := dynamodb.UpdateItemInput{
 		TableName:                 aws.String(r.tableName),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		ReturnValues:              types.ReturnValueAllNew,
-		ConditionExpression:       expr.Condition(),
 		Key: map[string]types.AttributeValue{
 			hashKeyName: &types.AttributeValueMemberS{Value: pkValue(entry)},
 			sortKeyName: &types.AttributeValueMemberS{Value: skValue(leaderboard)},
@@ -211,6 +211,7 @@ func (r *DynamoDBRepository) Last(entry string, leaderboard string, value float6
 	if err != nil {
 		return domain.ScoreUpdate{}, fmt.Errorf("failed to update item: %w", err)
 	}
+
 	s := LeaderboardEntryRecord{}
 	err = attributevalue.UnmarshalMap(output.Attributes, &s)
 	if err != nil {
