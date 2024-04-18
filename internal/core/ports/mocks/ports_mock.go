@@ -11,6 +11,7 @@ package mocks
 
 import (
 	reflect "reflect"
+	time "time"
 
 	domain "github.com/posilva/simpleboards/internal/core/domain"
 	gomock "go.uber.org/mock/gomock"
@@ -40,10 +41,10 @@ func (m *MockRepository) EXPECT() *MockRepositoryMockRecorder {
 }
 
 // Add mocks base method.
-func (m *MockRepository) Add(entry, leaderboard string, value float64) (float64, error) {
+func (m *MockRepository) Add(entry, leaderboard string, value float64) (domain.ScoreUpdate, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Add", entry, leaderboard, value)
-	ret0, _ := ret[0].(float64)
+	ret0, _ := ret[0].(domain.ScoreUpdate)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -55,10 +56,10 @@ func (mr *MockRepositoryMockRecorder) Add(entry, leaderboard, value any) *gomock
 }
 
 // Last mocks base method.
-func (m *MockRepository) Last(entry, leaderboard string, value float64) (float64, error) {
+func (m *MockRepository) Last(entry, leaderboard string, value float64) (domain.ScoreUpdate, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Last", entry, leaderboard, value)
-	ret0, _ := ret[0].(float64)
+	ret0, _ := ret[0].(domain.ScoreUpdate)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -70,10 +71,10 @@ func (mr *MockRepositoryMockRecorder) Last(entry, leaderboard, value any) *gomoc
 }
 
 // Max mocks base method.
-func (m *MockRepository) Max(entry, leaderboard string, value float64) (float64, error) {
+func (m *MockRepository) Max(entry, leaderboard string, value float64) (domain.ScoreUpdate, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Max", entry, leaderboard, value)
-	ret0, _ := ret[0].(float64)
+	ret0, _ := ret[0].(domain.ScoreUpdate)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -85,10 +86,10 @@ func (mr *MockRepositoryMockRecorder) Max(entry, leaderboard, value any) *gomock
 }
 
 // Min mocks base method.
-func (m *MockRepository) Min(entry, leaderboard string, value float64) (float64, error) {
+func (m *MockRepository) Min(entry, leaderboard string, value float64) (domain.ScoreUpdate, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Min", entry, leaderboard, value)
-	ret0, _ := ret[0].(float64)
+	ret0, _ := ret[0].(domain.ScoreUpdate)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -415,4 +416,163 @@ func (m *MockConfigProvider) Refresh() {
 func (mr *MockConfigProviderMockRecorder) Refresh() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Refresh", reflect.TypeOf((*MockConfigProvider)(nil).Refresh))
+}
+
+// MockConfigGetter is a mock of ConfigGetter interface.
+type MockConfigGetter struct {
+	ctrl     *gomock.Controller
+	recorder *MockConfigGetterMockRecorder
+}
+
+// MockConfigGetterMockRecorder is the mock recorder for MockConfigGetter.
+type MockConfigGetterMockRecorder struct {
+	mock *MockConfigGetter
+}
+
+// NewMockConfigGetter creates a new mock instance.
+func NewMockConfigGetter(ctrl *gomock.Controller) *MockConfigGetter {
+	mock := &MockConfigGetter{ctrl: ctrl}
+	mock.recorder = &MockConfigGetterMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockConfigGetter) EXPECT() *MockConfigGetterMockRecorder {
+	return m.recorder
+}
+
+// GetConfig mocks base method.
+func (m *MockConfigGetter) GetConfig() (domain.LeaderboardsConfigMap, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetConfig")
+	ret0, _ := ret[0].(domain.LeaderboardsConfigMap)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetConfig indicates an expected call of GetConfig.
+func (mr *MockConfigGetterMockRecorder) GetConfig() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockConfigGetter)(nil).GetConfig))
+}
+
+// MockResetLocker is a mock of ResetLocker interface.
+type MockResetLocker struct {
+	ctrl     *gomock.Controller
+	recorder *MockResetLockerMockRecorder
+}
+
+// MockResetLockerMockRecorder is the mock recorder for MockResetLocker.
+type MockResetLockerMockRecorder struct {
+	mock *MockResetLocker
+}
+
+// NewMockResetLocker creates a new mock instance.
+func NewMockResetLocker(ctrl *gomock.Controller) *MockResetLocker {
+	mock := &MockResetLocker{ctrl: ctrl}
+	mock.recorder = &MockResetLockerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockResetLocker) EXPECT() *MockResetLockerMockRecorder {
+	return m.recorder
+}
+
+// ResetLock mocks base method.
+func (m *MockResetLocker) ResetLock(leaderboar string, epoch int, duration time.Duration) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResetLock", leaderboar, epoch, duration)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ResetLock indicates an expected call of ResetLock.
+func (mr *MockResetLockerMockRecorder) ResetLock(leaderboar, epoch, duration any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetLock", reflect.TypeOf((*MockResetLocker)(nil).ResetLock), leaderboar, epoch, duration)
+}
+
+// MockTelemetryReporter is a mock of TelemetryReporter interface.
+type MockTelemetryReporter struct {
+	ctrl     *gomock.Controller
+	recorder *MockTelemetryReporterMockRecorder
+}
+
+// MockTelemetryReporterMockRecorder is the mock recorder for MockTelemetryReporter.
+type MockTelemetryReporterMockRecorder struct {
+	mock *MockTelemetryReporter
+}
+
+// NewMockTelemetryReporter creates a new mock instance.
+func NewMockTelemetryReporter(ctrl *gomock.Controller) *MockTelemetryReporter {
+	mock := &MockTelemetryReporter{ctrl: ctrl}
+	mock.recorder = &MockTelemetryReporterMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockTelemetryReporter) EXPECT() *MockTelemetryReporterMockRecorder {
+	return m.recorder
+}
+
+// ReportCounter mocks base method.
+func (m *MockTelemetryReporter) ReportCounter(name string, value float64, tags map[string]string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ReportCounter", name, value, tags)
+}
+
+// ReportCounter indicates an expected call of ReportCounter.
+func (mr *MockTelemetryReporterMockRecorder) ReportCounter(name, value, tags any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReportCounter", reflect.TypeOf((*MockTelemetryReporter)(nil).ReportCounter), name, value, tags)
+}
+
+// ReportGauge mocks base method.
+func (m *MockTelemetryReporter) ReportGauge(name string, value float64, tags map[string]string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ReportGauge", name, value, tags)
+}
+
+// ReportGauge indicates an expected call of ReportGauge.
+func (mr *MockTelemetryReporterMockRecorder) ReportGauge(name, value, tags any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReportGauge", reflect.TypeOf((*MockTelemetryReporter)(nil).ReportGauge), name, value, tags)
+}
+
+// ReportHistogram mocks base method.
+func (m *MockTelemetryReporter) ReportHistogram(name string, value float64, tags map[string]string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ReportHistogram", name, value, tags)
+}
+
+// ReportHistogram indicates an expected call of ReportHistogram.
+func (mr *MockTelemetryReporterMockRecorder) ReportHistogram(name, value, tags any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReportHistogram", reflect.TypeOf((*MockTelemetryReporter)(nil).ReportHistogram), name, value, tags)
+}
+
+// ReportSummary mocks base method.
+func (m *MockTelemetryReporter) ReportSummary(name string, value float64, tags map[string]string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ReportSummary", name, value, tags)
+}
+
+// ReportSummary indicates an expected call of ReportSummary.
+func (mr *MockTelemetryReporterMockRecorder) ReportSummary(name, value, tags any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReportSummary", reflect.TypeOf((*MockTelemetryReporter)(nil).ReportSummary), name, value, tags)
+}
+
+// SetDefaultTags mocks base method.
+func (m *MockTelemetryReporter) SetDefaultTags(tags map[string]string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetDefaultTags", tags)
+}
+
+// SetDefaultTags indicates an expected call of SetDefaultTags.
+func (mr *MockTelemetryReporterMockRecorder) SetDefaultTags(tags any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetDefaultTags", reflect.TypeOf((*MockTelemetryReporter)(nil).SetDefaultTags), tags)
 }

@@ -8,10 +8,10 @@ import (
 
 // Repository defines the interface to handle with
 type Repository interface {
-	Add(entry string, leaderboard string, value float64) (float64, error)
-	Max(entry string, leaderboard string, value float64) (float64, error)
-	Min(entry string, leaderboard string, value float64) (float64, error)
-	Last(entry string, leaderboard string, value float64) (float64, error)
+	Add(entry string, leaderboard string, value float64) (domain.ScoreUpdate, error)
+	Max(entry string, leaderboard string, value float64) (domain.ScoreUpdate, error)
+	Min(entry string, leaderboard string, value float64) (domain.ScoreUpdate, error)
+	Last(entry string, leaderboard string, value float64) (domain.ScoreUpdate, error)
 }
 
 // Logger defines a basic logger interface

@@ -63,7 +63,7 @@ func (s *LeaderboardsService) ReportScore(entryID string, name string, score flo
 	if err != nil {
 		return 0, fmt.Errorf("failed to add score to scoreboard: %v", err)
 	}
-	return v, nil
+	return v.Score, nil
 }
 
 // ListScores returns a list of scores from leaderboards

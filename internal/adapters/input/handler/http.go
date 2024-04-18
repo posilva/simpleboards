@@ -27,21 +27,22 @@ func (h *HTTPHandler) HandlePutScore(ctx *gin.Context) {
 	var b PutScore
 	err := ctx.BindJSON(&b)
 	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
+		_ = ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 	value, err := h.service.ReportScore(b.Entry, name, float64(b.Score))
 	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
+		_ = ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"new_score": value})
 }
+
 func (h *HTTPHandler) HandleGetScores(ctx *gin.Context) {
 	name := ctx.Param("leaderboard")
 	value, err := h.service.ListScores(name)
 	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
+		_ = ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"list": value})

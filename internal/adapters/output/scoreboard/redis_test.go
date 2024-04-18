@@ -6,12 +6,16 @@ import (
 
 	"github.com/posilva/simpleboards/internal/testutil"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
-func TestNewRedisCache(t *testing.T) {
-	cache, err := NewRedisScoreboard("localhost:6379")
+func TestNewRedisScoreboard(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	board, err := NewRedisScoreboard("localhost:6379")
 	assert.NoError(t, err)
-	assert.NotNil(t, cache)
+	assert.NotNil(t, board)
 }
 
 func TestAddScore(t *testing.T) {
