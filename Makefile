@@ -35,7 +35,7 @@ test:
 
 
 testi:
-	go test -timeout 10000ms -v ./internal/... -tags=integration
+	go test -timeout 10000ms -v ./internal/integration/... -tags=integration
 
 cover: test
 	go tool cover -html=cover.out -o coverage.html
