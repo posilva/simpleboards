@@ -35,15 +35,17 @@ func (h *HTTPHandler) HandlePutScore(ctx *gin.Context) {
 		_ = ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"new_score": value})
+
+	ctx.Errors.MarshalJSON()
+	ctx.JSON(http.StatusOK, gin.H{"new_score": value.Score, "epoch": value.Epoch})
 }
 
 func (h *HTTPHandler) HandleGetScores(ctx *gin.Context) {
 	name := ctx.Param("leaderboard")
-	value, err := h.service.ListScores(name)
+	value, epoch, err := h.service.ListScores(name)
 	if err != nil {
 		_ = ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"list": value})
+	ctx.JSON(http.StatusOK, gin.H{"list": value, "epoch": epoch})
 }

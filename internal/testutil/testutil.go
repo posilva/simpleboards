@@ -12,7 +12,7 @@ import (
 
 const (
 	// DynamoDBLocalTableName defines the DynamoDB table name for local development with LocalStack
-	DynamoDBLocalTableName string = "local-dev-dev-leaderboards"
+	DynamoDBLocalTableName string = "sgs-gbl-dev-leaderboards"
 	// RabbitMQLocalURL defines the local url to connect to Rabbit MQ
 	RabbitMQLocalURL string = "amqp://guest:guest@localhost:5672/"
 	// RabbitMQLocalURLSSL defines the local url to connect to Rabbit MQ using SSL

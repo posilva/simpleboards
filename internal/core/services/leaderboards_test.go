@@ -28,7 +28,7 @@ func TestReportScore(t *testing.T) {
 	scoreboard := mocks.NewMockScoreboard(ctrl)
 
 	configProvider := defaultConfigProviderMock(ctrl, lbName)
-	nameEpoch, err := GetLeaderboardNameWithEpoch(lbName, domain.Hourly)
+	nameEpoch, _, err := GetLeaderboardNameWithEpoch(lbName, domain.Hourly)
 	assert.NoError(t, err)
 	repo.EXPECT().Add(entryID, nameEpoch, value).Return(domain.ScoreUpdate{Score: value}, nil)
 	scoreboard.EXPECT().AddScore(entryID, nameEpoch, value).Return(nil)
@@ -39,7 +39,7 @@ func TestReportScore(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Nil(t, nil)
-	assert.Equal(t, value, v)
+	assert.Equal(t, value, v.Score)
 }
 
 func TestListScores(t *testing.T) {
@@ -47,7 +47,7 @@ func TestListScores(t *testing.T) {
 	defer ctrl.Finish()
 
 	lbName := testutil.NewUnique(testutil.Name(t))
-	nameEpoch, err := GetLeaderboardNameWithEpoch(lbName, domain.Hourly)
+	nameEpoch, _, err := GetLeaderboardNameWithEpoch(lbName, domain.Hourly)
 	assert.NoError(t, err)
 	repo := mocks.NewMockRepository(ctrl)
 	scoreboard := mocks.NewMockScoreboard(ctrl)
@@ -57,7 +57,7 @@ func TestListScores(t *testing.T) {
 
 	lbSrv := NewLeaderboardsService(repo, scoreboard, configProvider)
 
-	v, err := lbSrv.ListScores(lbName)
+	v, _, err := lbSrv.ListScores(lbName)
 
 	assert.NoError(t, err)
 	assert.Len(t, v, 1)

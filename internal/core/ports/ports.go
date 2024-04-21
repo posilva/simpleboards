@@ -24,8 +24,8 @@ type Logger interface {
 // LeaderboardsService defines the leaderboard service interface
 type LeaderboardsService interface {
 	GetConfig(name string) (domain.LeaderboardConfig, error)
-	ReportScore(entryID string, name string, value float64) (float64, error)
-	ListScores(name string) ([]domain.LeaderboardScores, error)
+	ReportScore(entryID string, name string, value float64) (domain.ReportScoreOutput, error)
+	ListScores(name string) ([]domain.LeaderboardScores, int64, error)
 }
 
 // ScoreboardService ...

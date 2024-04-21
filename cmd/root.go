@@ -15,6 +15,7 @@ import (
 	"github.com/posilva/simpleboards/internal/adapters/output/scoreboard"
 	"github.com/posilva/simpleboards/internal/core/services"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -38,6 +39,7 @@ var rootCmd = &cobra.Command{
 		httpHandler := handler.NewHTTPHandler(service)
 		r.GET("/", httpHandler.Handle)
 		api := r.Group("api/v1")
+
 		api.PUT("/score/:leaderboard", httpHandler.HandlePutScore)
 		api.GET("/scores/:leaderboard", httpHandler.HandleGetScores)
 
@@ -45,6 +47,9 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			panic(fmt.Errorf("failed to start the server %v", err))
 		}
+	},
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		return viper.BindPFlag("local", cmd.Flags().Lookup("local"))
 	},
 }
 
@@ -66,23 +71,34 @@ func init() {
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.Flags().BoolP("local", "l", false, "Run the service locally against using docker compose")
 }
 
 func createService() (*services.LeaderboardsService, error) {
 	// TODO: For local testing
 
-	cfg := aws.NewConfig()
+	var cfg aws.Config
+
+	if viper.GetBool("local") {
+		fmt.Println("Running in local mode")
+		cfg = repository.DefaultLocalAWSClientConfig()
+	} else {
+		cfg = *aws.NewConfig()
+	}
+
 	settings := repository.DynamoDBSettings{
-		Client: dynamodb.NewFromConfig(*cfg),
+		Client: dynamodb.NewFromConfig(cfg),
 		Logger: logging.NewSimpleLogger(),
 		Table:  config.GetDynamoDBTableName(),
 	}
+
 	repo, err := repository.NewDynamoDBRepository(settings)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create dynamodb repository: %v", err)
 	}
+
 	configProvider := configprovider.NewSimpleConfigProvider(repo, settings.Logger)
+
 	scoreboard, err := scoreboard.NewRedisScoreboard(config.GetRedisAddr())
 	if err != nil {
 		return nil, fmt.Errorf("failed to create redis scoreboard: %v", err)

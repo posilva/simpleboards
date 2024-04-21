@@ -56,6 +56,5 @@ func DefaultLocalAWSClientConfig() aws.Config {
 	if err != nil {
 		panic(err)
 	}
-
 	return cfg
 }

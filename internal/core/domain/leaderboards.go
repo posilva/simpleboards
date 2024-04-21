@@ -68,3 +68,8 @@ type ScoreUpdate struct {
 	Score float64
 	Done  bool
 }
+
+type ReportScoreOutput struct {
+	Score float64
+	Epoch int64
+}

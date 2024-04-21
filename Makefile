@@ -1,4 +1,4 @@
-.PHONY: run fmt test cover infra-up infra-up infra-test infra-local infra-local-down infra-upd lint setup
+.PHONY: run fmt test cover infra-up infra-up infra-test infra-local infra-local-down infra-upd lint setup testis
 
 # This assumes tflocal is installed https://github.com/localstack/terraform-local
 
@@ -35,7 +35,10 @@ test:
 
 
 testi:
-	go test -timeout 10000ms -v ./internal/integration/... -tags=integration
+	go test -timeout 10000ms -v --short ./tests/... -tags=integration
+
+testis:
+	go test -timeout 10000ms -v ./tests/... -tags=integration
 
 cover: test
 	go tool cover -html=cover.out -o coverage.html

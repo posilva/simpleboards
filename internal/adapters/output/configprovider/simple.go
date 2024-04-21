@@ -12,7 +12,7 @@ import (
 
 // TODO: We can generalise the refresh component
 const (
-	refreshIntervalSecs = 60
+	refreshIntervalSecs = 5
 )
 
 type SimpleConfigProvider[T domain.LeaderboardsConfigMap] struct {
@@ -39,7 +39,6 @@ func NewSimpleConfigProvider(configGetter ports.ConfigGetter, logger ports.Logge
 func (cp *SimpleConfigProvider[T]) Refresh() {
 	cp.lock.Lock()
 	defer cp.lock.Unlock()
-
 	cfgMap, err := cp.configGetter.GetConfig()
 	if err != nil {
 		cp.logger.Error("failed to get configuration: %v", err)

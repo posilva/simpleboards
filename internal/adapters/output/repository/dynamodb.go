@@ -66,7 +66,7 @@ func (r *DynamoDBRepository) Add(entry string, leaderboard string, value float64
 		expression.Name("score"),
 		expression.Value(value),
 	)
-
+	r.log.Info("updating entry", "entry", entry, "leaderboard", leaderboard, "value", value, "function", "Add")
 	builder = builder.WithUpdate(update)
 
 	expr, err := builder.Build()
@@ -94,6 +94,7 @@ func (r *DynamoDBRepository) Add(entry string, leaderboard string, value float64
 	if err != nil {
 		return domain.ScoreUpdate{}, fmt.Errorf("failed to process output: %w", err)
 	}
+
 	return domain.ScoreUpdate{Score: s.Score, Done: true}, nil
 }
 
@@ -103,6 +104,7 @@ func (r *DynamoDBRepository) Max(entry string, leaderboard string, value float64
 		expression.Name(scoreAttrib),
 		expression.Value(value),
 	)
+	r.log.Info("updating entry", "entry", entry, "leaderboard", leaderboard, "value", value, "function", "Max")
 	// just stores if the existing score value is less than the one to be stored
 	condBuilder := expression.Name(scoreAttrib).LessThanEqual(expression.Value(value)).Or(expression.Name(scoreAttrib).AttributeNotExists())
 	expr, err := builder.WithUpdate(update).WithCondition(condBuilder).Build()
@@ -145,6 +147,7 @@ func (r *DynamoDBRepository) Min(entry string, leaderboard string, value float64
 		expression.Name(scoreAttrib),
 		expression.Value(value),
 	)
+	r.log.Info("updating entry", "entry", entry, "leaderboard", leaderboard, "value", value, "function", "Min")
 	// just stores if the existing score value is greater than the one to be stored
 
 	condBuilder := expression.Name(scoreAttrib).GreaterThanEqual(expression.Value(value)).Or(expression.Name(scoreAttrib).AttributeNotExists())
@@ -189,6 +192,8 @@ func (r *DynamoDBRepository) Last(entry string, leaderboard string, value float6
 		expression.Name(scoreAttrib),
 		expression.Value(value),
 	)
+
+	r.log.Info("updating entry", "entry", entry, "leaderboard", leaderboard, "value", value, "function", "Last")
 
 	expr, err := builder.WithUpdate(update).Build()
 	if err != nil {
@@ -242,7 +247,7 @@ func (r *DynamoDBRepository) GetConfig() (domain.LeaderboardsConfigMap, error) {
 
 	output, err := r.client.Query(ctx, &input)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query database to query database: %v", err)
+		return nil, fmt.Errorf("failed to query database: %v", err)
 	}
 
 	var configMap domain.LeaderboardsConfigMap = make(map[string]domain.LeaderboardConfig, len(output.Items))

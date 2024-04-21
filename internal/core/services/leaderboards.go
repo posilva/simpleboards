@@ -43,44 +43,44 @@ func (s *LeaderboardsService) GetConfig(name string) (domain.LeaderboardConfig, 
 }
 
 // ReportScore  register a new score to a given entry on a leaderboard
-func (s *LeaderboardsService) ReportScore(entryID string, name string, score float64) (float64, error) {
+func (s *LeaderboardsService) ReportScore(entryID string, name string, score float64) (domain.ReportScoreOutput, error) {
 	config, err := s.GetConfig(name)
 	if err != nil {
-		return 0, fmt.Errorf("failed to fetch configs: %v", err)
+		return domain.ReportScoreOutput{}, fmt.Errorf("failed to fetch configs: %v", err)
 	}
 
-	leaderboard, err := GetLeaderboardNameWithEpoch(name, config.Reset)
+	leaderboard, epoch, err := GetLeaderboardNameWithEpoch(name, config.Reset)
 	if err != nil {
-		return 0, fmt.Errorf("failed to generate name from configs: %v", err)
+		return domain.ReportScoreOutput{}, fmt.Errorf("failed to generate name from configs: %v", err)
 	}
 
 	v, err := s.repository.Add(entryID, leaderboard, score)
 	if err != nil {
-		return 0, fmt.Errorf("failed to add score to repository: %v", err)
+		return domain.ReportScoreOutput{}, fmt.Errorf("failed to add score to repository: %v", err)
 	}
 
 	err = s.scoreboard.AddScore(entryID, leaderboard, score)
 	if err != nil {
-		return 0, fmt.Errorf("failed to add score to scoreboard: %v", err)
+		return domain.ReportScoreOutput{}, fmt.Errorf("failed to add score to scoreboard: %v", err)
 	}
-	return v.Score, nil
+	return domain.ReportScoreOutput{Score: v.Score, Epoch: epoch}, nil
 }
 
 // ListScores returns a list of scores from leaderboards
-func (s *LeaderboardsService) ListScores(name string) ([]domain.LeaderboardScores, error) {
+func (s *LeaderboardsService) ListScores(name string) ([]domain.LeaderboardScores, int64, error) {
 	config, err := s.GetConfig(name)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch configs: %v", err)
+		return nil, 0, fmt.Errorf("failed to fetch configs: %v", err)
 	}
 
-	leaderboard, err := GetLeaderboardNameWithEpoch(name, config.Reset)
+	leaderboard, epoch, err := GetLeaderboardNameWithEpoch(name, config.Reset)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate name from configs: %v", err)
+		return nil, 0, fmt.Errorf("failed to generate name from configs: %v", err)
 	}
 
 	scores, err := s.scoreboard.Get(leaderboard)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch scores: %v", err)
+		return nil, 0, fmt.Errorf("failed to fetch scores: %v", err)
 	}
 
 	// TODO: should get the score boards
@@ -94,17 +94,17 @@ func (s *LeaderboardsService) ListScores(name string) ([]domain.LeaderboardScore
 		})
 	}
 
-	return []domain.LeaderboardScores{resultScores}, nil
+	return []domain.LeaderboardScores{resultScores}, epoch, nil
 }
 
 // TODO: Create the name from the current timestamp and configuration settings
-func GetLeaderboardNameWithEpoch(name string, resetType domain.LeaderboardResetType) (string, error) {
+func GetLeaderboardNameWithEpoch(name string, resetType domain.LeaderboardResetType) (string, int64, error) {
 	epoch, err := CalculateEpoch(resetType, time.Now().Unix())
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
 	finalName := fmt.Sprintf("%s::%d", name, epoch)
-	return finalName, nil
+	return finalName, epoch, nil
 }
 
 func CalculateEpoch(resetType domain.LeaderboardResetType, posixTs int64) (int64, error) {
