@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -58,7 +59,28 @@ func TestListScores(t *testing.T) {
 	lbSrv := NewLeaderboardsService(repo, scoreboard, configProvider)
 
 	v, _, err := lbSrv.ListScores(lbName)
+	assert.NoError(t, err)
+	assert.Len(t, v, 1)
+	assert.True(t, strings.Contains(v[0].Name, lbName))
+}
 
+func TestGetResults(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	lbName := testutil.NewUnique(testutil.Name(t))
+	nameEpoch, epoch, err := GetLeaderboardNameWithEpoch(lbName, domain.Hourly)
+	assert.NoError(t, err)
+	repo := mocks.NewMockRepository(ctrl)
+	scoreboard := mocks.NewMockScoreboard(ctrl)
+	configProvider := defaultConfigProviderMock(ctrl, lbName)
+
+	scoreboard.EXPECT().Get(nameEpoch).Return([]domain.ScoreboardResult{}, nil)
+
+	lbSrv := NewLeaderboardsService(repo, scoreboard, configProvider)
+
+	v, err := lbSrv.GetResults(lbName, epoch)
+	fmt.Println(v)
 	assert.NoError(t, err)
 	assert.Len(t, v, 1)
 	assert.True(t, strings.Contains(v[0].Name, lbName))

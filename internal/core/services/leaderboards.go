@@ -97,14 +97,45 @@ func (s *LeaderboardsService) ListScores(name string) ([]domain.LeaderboardScore
 	return []domain.LeaderboardScores{resultScores}, epoch, nil
 }
 
+func (s *LeaderboardsService) GetResults(name string, epoch int64) ([]domain.LeaderboardScores, error) {
+	config, err := s.GetConfig(name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch configs: %v", err)
+	}
+
+	leaderboard := getNameWithEpoch(name, epoch)
+
+	scores, err := s.scoreboard.Get(leaderboard)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch scores: %v", err)
+	}
+	// TODO: get the prize table ranks
+	_ = config
+
+	// TODO: should get the score boards
+	resultScores := domain.LeaderboardScores{}
+	resultScores.Name = leaderboard
+	for _, score := range scores {
+		resultScores.Scores = append(resultScores.Scores, domain.LeaderboardEntry{
+			EntryID: score.EntryID,
+			Score:   score.Score,
+			Rank:    score.Rank,
+		})
+	}
+	return []domain.LeaderboardScores{resultScores}, nil
+}
+
 // TODO: Create the name from the current timestamp and configuration settings
 func GetLeaderboardNameWithEpoch(name string, resetType domain.LeaderboardResetType) (string, int64, error) {
 	epoch, err := CalculateEpoch(resetType, time.Now().Unix())
 	if err != nil {
 		return "", 0, err
 	}
-	finalName := fmt.Sprintf("%s::%d", name, epoch)
-	return finalName, epoch, nil
+	return getNameWithEpoch(name, epoch), epoch, nil
+}
+
+func getNameWithEpoch(name string, epoch int64) string {
+	return fmt.Sprintf("%s::%d", name, epoch)
 }
 
 func CalculateEpoch(resetType domain.LeaderboardResetType, posixTs int64) (int64, error) {

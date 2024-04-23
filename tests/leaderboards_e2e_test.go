@@ -54,12 +54,19 @@ func TestHTTPReportScore(t *testing.T) {
 		t.Skip("skipping test in short mode.")
 	}
 	configLeaderboard()
-	resp, err := reportScore(defaultLbName, "123", 10)
+	entryID := testutil.NewID()
+	resp, err := reportScore(defaultLbName, entryID, 10)
+	if err != nil {
+		log.Fatalf("failed to execute GetAuthConfig: %v", err)
+	}
+	resp, err = reportScore(defaultLbName, entryID, 10)
 	if err != nil {
 		log.Fatalf("failed to execute GetAuthConfig: %v", err)
 	}
 
-	assert.Equal(t, float64(10), resp.Score)
+	resp2, _ := listScores(defaultLbName)
+	fmt.Println(resp2)
+	assert.Equal(t, float64(20), resp.Score)
 }
 
 func reportScore(ldbName string, entry string, score float64) (response putScoreResponse, err error) {
@@ -69,10 +76,12 @@ func reportScore(ldbName string, entry string, score float64) (response putScore
 		Entry: entry,
 		Score: score,
 	}
+
 	data, err := json.Marshal(&req)
 	if err != nil {
 		return response, err
 	}
+
 	err = requests.
 		URL(path).
 		Put().
@@ -83,4 +92,20 @@ func reportScore(ldbName string, entry string, score float64) (response putScore
 		ToJSON(&response).
 		Fetch(context.Background())
 	return response, err
+}
+
+func listScores(lbname string) (string, error) {
+	path := fmt.Sprintf("/api/v1/scores/%s", lbname)
+	var s string
+	err := requests.
+		URL(path).
+		Host(baseURL).
+		Scheme(defaultScheme).
+		CheckStatus(http.StatusOK).
+		ToString(&s).
+		Fetch(context.Background())
+	if err != nil {
+		return "", err
+	}
+	return s, nil
 }

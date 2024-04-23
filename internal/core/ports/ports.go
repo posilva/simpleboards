@@ -26,6 +26,8 @@ type LeaderboardsService interface {
 	GetConfig(name string) (domain.LeaderboardConfig, error)
 	ReportScore(entryID string, name string, value float64) (domain.ReportScoreOutput, error)
 	ListScores(name string) ([]domain.LeaderboardScores, int64, error)
+	// TODO: we may have a dedicated data type to return in this call
+	GetResults(name string, epoch int64) ([]domain.LeaderboardScores, error)
 }
 
 // ScoreboardService ...

@@ -36,7 +36,6 @@ func (h *HTTPHandler) HandlePutScore(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Errors.MarshalJSON()
 	ctx.JSON(http.StatusOK, gin.H{"new_score": value.Score, "epoch": value.Epoch})
 }
 
@@ -47,5 +46,5 @@ func (h *HTTPHandler) HandleGetScores(ctx *gin.Context) {
 		_ = ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"list": value, "epoch": epoch})
+	ctx.JSON(http.StatusOK, gin.H{"scores": value, "epoch": epoch})
 }
