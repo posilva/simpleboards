@@ -27,13 +27,15 @@ provider "aws" {
   #     dynamodb = "http://localhost:4566"
   #   }
 }
+
 terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = "~> 5.45.0"
     }
   }
 }
+
 // Used by get the current aws number account.
 data "aws_caller_identity" "current" {}

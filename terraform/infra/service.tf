@@ -1,4 +1,37 @@
 
+data "aws_iam_policy_document" "ecr_policy" {
+  statement {
+    actions = [
+      "ecr:BatchGetImage",
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:CompleteLayerUpload",
+      "ecr:GetAuthorizationToken",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:InitiateLayerUpload",
+      "ecr:PutImage",
+      "ecr:UploadLayerPart"
+    ]
+
+    resources = ["*"]
+  }
+}
+module "ecr" {
+  source = "cloudposse/ecr/aws"
+  # Cloud Posse recommends pinning every module to a specific version
+  version = "0.41.0"
+
+  name        = local.name
+  namespace   = local.namespace
+  stage       = local.stage
+  environment = local.environment
+
+
+  use_fullname        = false # this will only use the 'name'
+  scan_images_on_push = true
+
+}
+
+
 module "container_definition" {
   source  = "cloudposse/ecs-container-definition/aws"
   version = "0.61.1"
@@ -62,3 +95,7 @@ module "ecs_service" {
   }]
 }
 
+resource "aws_iam_role_policy_attachment" "dynamodb-service-attach" {
+  role       = module.ecs_service.task_role_name
+  policy_arn = aws_iam_policy.dynamodb-full-access.arn
+}

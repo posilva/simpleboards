@@ -27,6 +27,7 @@ const (
 	queryTimeout   = 1 * time.Second
 	pkConfigPrefix = "LBRD#CONFIG"
 	skConfigPrefix = "LBRD#NAME#"
+	scoreAttrib    = "score"
 )
 
 type DDBConfigItem struct {
@@ -59,18 +60,18 @@ func NewDynamoDBRepository(settings DynamoDBSettings) (*DynamoDBRepository, erro
 }
 
 // Add the value to the entry
-func (r *DynamoDBRepository) Add(entry string, leaderboard string, value float64) (float64, error) {
+func (r *DynamoDBRepository) Add(entry string, leaderboard string, value float64) (domain.ScoreUpdate, error) {
 	builder := expression.NewBuilder()
 	update := expression.Add(
 		expression.Name("score"),
 		expression.Value(value),
 	)
-
+	r.log.Info("updating entry", "entry", entry, "leaderboard", leaderboard, "value", value, "function", "Add")
 	builder = builder.WithUpdate(update)
 
 	expr, err := builder.Build()
 	if err != nil {
-		return 0, fmt.Errorf("failed to build update expression: %w", err)
+		return domain.ScoreUpdate{}, fmt.Errorf("failed to build update expression: %w", err)
 	}
 	input := dynamodb.UpdateItemInput{
 		TableName:                 aws.String(r.tableName),
@@ -86,26 +87,142 @@ func (r *DynamoDBRepository) Add(entry string, leaderboard string, value float64
 
 	output, err := r.client.UpdateItem(context.Background(), &input)
 	if err != nil {
-		return 0, fmt.Errorf("failed to update item: %w", err)
+		return domain.ScoreUpdate{}, fmt.Errorf("failed to update item: %w", err)
 	}
 	s := LeaderboardEntryRecord{}
 	err = attributevalue.UnmarshalMap(output.Attributes, &s)
 	if err != nil {
-		return 0, fmt.Errorf("failed to process output: %w", err)
+		return domain.ScoreUpdate{}, fmt.Errorf("failed to process output: %w", err)
 	}
-	return s.Score, nil
+
+	return domain.ScoreUpdate{Score: s.Score, Done: true}, nil
 }
 
-func (r *DynamoDBRepository) Max(entry string, leaderboard string, value float64) (float64, error) {
-	panic("not implemented") // TODO: Implement
+func (r *DynamoDBRepository) Max(entry string, leaderboard string, value float64) (domain.ScoreUpdate, error) {
+	builder := expression.NewBuilder()
+	update := expression.Set(
+		expression.Name(scoreAttrib),
+		expression.Value(value),
+	)
+	r.log.Info("updating entry", "entry", entry, "leaderboard", leaderboard, "value", value, "function", "Max")
+	// just stores if the existing score value is less than the one to be stored
+	condBuilder := expression.Name(scoreAttrib).LessThanEqual(expression.Value(value)).Or(expression.Name(scoreAttrib).AttributeNotExists())
+	expr, err := builder.WithUpdate(update).WithCondition(condBuilder).Build()
+	if err != nil {
+		return domain.ScoreUpdate{}, fmt.Errorf("failed to build update expression: %w", err)
+	}
+	input := dynamodb.UpdateItemInput{
+		TableName:                 aws.String(r.tableName),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		ReturnValues:              types.ReturnValueAllNew,
+		ConditionExpression:       expr.Condition(),
+		Key: map[string]types.AttributeValue{
+			hashKeyName: &types.AttributeValueMemberS{Value: pkValue(entry)},
+			sortKeyName: &types.AttributeValueMemberS{Value: skValue(leaderboard)},
+		},
+		UpdateExpression: expr.Update(),
+	}
+
+	output, err := r.client.UpdateItem(context.Background(), &input)
+	if err != nil {
+		var ccfe *types.ConditionalCheckFailedException
+		if errors.As(err, &ccfe) {
+			return domain.ScoreUpdate{Done: false}, nil
+		}
+		return domain.ScoreUpdate{}, fmt.Errorf("failed to update item: %w", err)
+	}
+	s := LeaderboardEntryRecord{}
+	err = attributevalue.UnmarshalMap(output.Attributes, &s)
+	if err != nil {
+		return domain.ScoreUpdate{}, fmt.Errorf("failed to process output: %w", err)
+	}
+
+	return domain.ScoreUpdate{Score: s.Score, Done: true}, nil
 }
 
-func (r *DynamoDBRepository) Min(entry string, leaderboard string, value float64) (float64, error) {
-	panic("not implemented") // TODO: Implement
+func (r *DynamoDBRepository) Min(entry string, leaderboard string, value float64) (domain.ScoreUpdate, error) {
+	builder := expression.NewBuilder()
+	update := expression.Set(
+		expression.Name(scoreAttrib),
+		expression.Value(value),
+	)
+	r.log.Info("updating entry", "entry", entry, "leaderboard", leaderboard, "value", value, "function", "Min")
+	// just stores if the existing score value is greater than the one to be stored
+
+	condBuilder := expression.Name(scoreAttrib).GreaterThanEqual(expression.Value(value)).Or(expression.Name(scoreAttrib).AttributeNotExists())
+
+	expr, err := builder.WithUpdate(update).WithCondition(condBuilder).Build()
+	if err != nil {
+		return domain.ScoreUpdate{}, fmt.Errorf("failed to build update expression: %w", err)
+	}
+	input := dynamodb.UpdateItemInput{
+		TableName:                 aws.String(r.tableName),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		ReturnValues:              types.ReturnValueAllNew,
+		ConditionExpression:       expr.Condition(),
+		Key: map[string]types.AttributeValue{
+			hashKeyName: &types.AttributeValueMemberS{Value: pkValue(entry)},
+			sortKeyName: &types.AttributeValueMemberS{Value: skValue(leaderboard)},
+		},
+		UpdateExpression: expr.Update(),
+	}
+
+	output, err := r.client.UpdateItem(context.Background(), &input)
+	if err != nil {
+		var ccfe *types.ConditionalCheckFailedException
+		if errors.As(err, &ccfe) {
+			return domain.ScoreUpdate{Done: false}, nil
+		}
+		return domain.ScoreUpdate{}, fmt.Errorf("failed to update item: %w", err)
+	}
+
+	s := LeaderboardEntryRecord{}
+	err = attributevalue.UnmarshalMap(output.Attributes, &s)
+	if err != nil {
+		return domain.ScoreUpdate{}, fmt.Errorf("failed to process output: %w", err)
+	}
+	return domain.ScoreUpdate{Score: s.Score, Done: true}, nil
 }
 
-func (r *DynamoDBRepository) Last(entry string, leaderboard string, value float64) (float64, error) {
-	panic("not implemented") // TODO: Implement
+func (r *DynamoDBRepository) Last(entry string, leaderboard string, value float64) (domain.ScoreUpdate, error) {
+	builder := expression.NewBuilder()
+	update := expression.Set(
+		expression.Name(scoreAttrib),
+		expression.Value(value),
+	)
+
+	r.log.Info("updating entry", "entry", entry, "leaderboard", leaderboard, "value", value, "function", "Last")
+
+	expr, err := builder.WithUpdate(update).Build()
+	if err != nil {
+		return domain.ScoreUpdate{}, fmt.Errorf("failed to build update expression: %w", err)
+	}
+
+	input := dynamodb.UpdateItemInput{
+		TableName:                 aws.String(r.tableName),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		ReturnValues:              types.ReturnValueAllNew,
+		Key: map[string]types.AttributeValue{
+			hashKeyName: &types.AttributeValueMemberS{Value: pkValue(entry)},
+			sortKeyName: &types.AttributeValueMemberS{Value: skValue(leaderboard)},
+		},
+		UpdateExpression: expr.Update(),
+	}
+
+	output, err := r.client.UpdateItem(context.Background(), &input)
+	if err != nil {
+		return domain.ScoreUpdate{}, fmt.Errorf("failed to update item: %w", err)
+	}
+
+	s := LeaderboardEntryRecord{}
+	err = attributevalue.UnmarshalMap(output.Attributes, &s)
+	if err != nil {
+		return domain.ScoreUpdate{}, fmt.Errorf("failed to process output: %w", err)
+	}
+	return domain.ScoreUpdate{Score: s.Score, Done: true}, nil
 }
 
 // GetConfigs returns all existing leaderboards
@@ -130,7 +247,7 @@ func (r *DynamoDBRepository) GetConfig() (domain.LeaderboardsConfigMap, error) {
 
 	output, err := r.client.Query(ctx, &input)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query database to query database: %v", err)
+		return nil, fmt.Errorf("failed to query database: %v", err)
 	}
 
 	var configMap domain.LeaderboardsConfigMap = make(map[string]domain.LeaderboardConfig, len(output.Items))

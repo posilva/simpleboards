@@ -7,7 +7,7 @@ RUN go mod download
 
 COPY . ./
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o /simpleboards main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o /simpleboards cmd/simpleboards/main.go 
 
 # Run the tests in the container
 FROM build-stage AS run-test-stage

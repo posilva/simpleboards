@@ -35,10 +35,16 @@ func NewRedisScoreboard(address string) (*RedisScoreboard, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to redis host '%v': %v ", address, err)
 	}
+
+	return NewRedisScoreboardWithClient(c), nil
+}
+
+// NewRedisScoreboardWithClient creates an instance of Redis scoreboard
+func NewRedisScoreboardWithClient(client rueidis.Client) *RedisScoreboard {
 	return &RedisScoreboard{
-		client:  c,
+		client:  client,
 		options: DefaultRedisScoreboardOptions(),
-	}, nil
+	}
 }
 
 // Get returns the list of results with batchsize

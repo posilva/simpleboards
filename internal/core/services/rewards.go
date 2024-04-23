@@ -39,7 +39,7 @@ func (r *RewardWatcher) Check() {
 		_ = lb
 
 		// calculate the epoch
-		lbNameWithEpoch, err := GetLeaderboardNameWithEpoch(lb, cfg.Reset)
+		lbNameWithEpoch, _, err := GetLeaderboardNameWithEpoch(lb, cfg.Reset)
 		if err != nil {
 			r.logger.Error("failed to calculate epoch: %v", err)
 		}

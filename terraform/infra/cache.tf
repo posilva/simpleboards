@@ -2,6 +2,7 @@
 module "redis" {
   source  = "cloudposse/elasticache-redis/aws"
   version = "1.2.2"
+  enabled = false
 
   namespace   = local.namespace
   stage       = local.stage

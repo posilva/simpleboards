@@ -24,7 +24,6 @@ jobs:
     - name: Build
       run: go build -v ./...
 
-  
   image:
     runs-on: ubuntu-latest
     steps:

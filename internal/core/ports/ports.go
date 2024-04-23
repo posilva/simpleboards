@@ -8,10 +8,10 @@ import (
 
 // Repository defines the interface to handle with
 type Repository interface {
-	Add(entry string, leaderboard string, value float64) (float64, error)
-	Max(entry string, leaderboard string, value float64) (float64, error)
-	Min(entry string, leaderboard string, value float64) (float64, error)
-	Last(entry string, leaderboard string, value float64) (float64, error)
+	Add(entry string, leaderboard string, value float64) (domain.ScoreUpdate, error)
+	Max(entry string, leaderboard string, value float64) (domain.ScoreUpdate, error)
+	Min(entry string, leaderboard string, value float64) (domain.ScoreUpdate, error)
+	Last(entry string, leaderboard string, value float64) (domain.ScoreUpdate, error)
 }
 
 // Logger defines a basic logger interface
@@ -24,8 +24,10 @@ type Logger interface {
 // LeaderboardsService defines the leaderboard service interface
 type LeaderboardsService interface {
 	GetConfig(name string) (domain.LeaderboardConfig, error)
-	ReportScore(entryID string, name string, value float64) (float64, error)
-	ListScores(name string) ([]domain.LeaderboardScores, error)
+	ReportScore(entryID string, name string, value float64) (domain.ReportScoreOutput, error)
+	ListScores(name string) ([]domain.LeaderboardScores, int64, error)
+	// TODO: we may have a dedicated data type to return in this call
+	GetResults(name string, epoch int64) ([]domain.LeaderboardScores, error)
 }
 
 // ScoreboardService ...

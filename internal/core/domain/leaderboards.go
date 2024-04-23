@@ -63,3 +63,13 @@ type LeaderboardScores struct {
 	Name   string             `json:"name"`
 	Scores []LeaderboardEntry `json:"scores"`
 }
+
+type ScoreUpdate struct {
+	Score float64
+	Done  bool
+}
+
+type ReportScoreOutput struct {
+	Score float64
+	Epoch int64
+}
