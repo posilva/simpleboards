@@ -1,5 +1,10 @@
 cover.out
 coverage.html
 .DS_Store
+<<<<<<< HEAD
 simpleboards
 .idea
+=======
+
+.idea
+>>>>>>> 869144e (Add localstack testcontainer)
