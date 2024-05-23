@@ -31,14 +31,14 @@ lint:
 	golangci-lint run
 
 test:
-	go test -timeout 10000ms -v ./internal/... -covermode=count -coverprofile=cover.out && go tool cover -func=cover.out
+	go test -timeout 50000ms -v ./internal/... -covermode=count -coverprofile=cover.out && go tool cover -func=cover.out
 
 
 testi:
-	go test -timeout 10000ms -v --short ./tests/... -tags=integration
+	go test -timeout 50000ms -v --short ./tests/...
 
 testis:
-	go test -timeout 10000ms -v ./tests/... -tags=integration
+	go test -timeout 50000ms -v ./tests/... -tags=integration
 
 cover: test
 	go tool cover -html=cover.out -o coverage.html

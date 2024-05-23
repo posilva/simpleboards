@@ -38,9 +38,10 @@ type DDBConfigItem struct {
 
 // leaderboardEntryRecord represents a dynamodb table record
 type LeaderboardEntryRecord struct {
-	PK    string  `dynamodbav:"pk" json:"pk"`
-	SK    string  `dynamodbav:"sk" json:"sk"`
-	Score float64 `dynamodbav:"score" json:"score"`
+	PK      string  `dynamodbav:"pk" json:"pk"`
+	SK      string  `dynamodbav:"sk" json:"sk"`
+	Score   float64 `dynamodbav:"score" json:"score"`
+	Counter uint64  `dynamodbav:"counter" json:"counter"`
 }
 
 // DynamoDBRepository implements Repository interface for DynamoDB
@@ -65,8 +66,11 @@ func (r *DynamoDBRepository) Add(entry string, leaderboard string, value float64
 	update := expression.Add(
 		expression.Name("score"),
 		expression.Value(value),
+	).Add(
+		expression.Name("counter"),
+		expression.Value(1),
 	)
-	r.log.Info("updating entry", "entry", entry, "leaderboard", leaderboard, "value", value, "function", "Add")
+	r.log.Debug("updating entry", "entry", entry, "leaderboard", leaderboard, "value", value, "function", "Add")
 	builder = builder.WithUpdate(update)
 
 	expr, err := builder.Build()
@@ -89,13 +93,15 @@ func (r *DynamoDBRepository) Add(entry string, leaderboard string, value float64
 	if err != nil {
 		return domain.ScoreUpdate{}, fmt.Errorf("failed to update item: %w", err)
 	}
+
 	s := LeaderboardEntryRecord{}
 	err = attributevalue.UnmarshalMap(output.Attributes, &s)
 	if err != nil {
 		return domain.ScoreUpdate{}, fmt.Errorf("failed to process output: %w", err)
 	}
 
-	return domain.ScoreUpdate{Score: s.Score, Done: true}, nil
+	res := domain.ScoreUpdate{Score: s.Score, Counter: s.Counter, Done: true}
+	return res, nil
 }
 
 func (r *DynamoDBRepository) Max(entry string, leaderboard string, value float64) (domain.ScoreUpdate, error) {
@@ -103,14 +109,19 @@ func (r *DynamoDBRepository) Max(entry string, leaderboard string, value float64
 	update := expression.Set(
 		expression.Name(scoreAttrib),
 		expression.Value(value),
+	).Add(
+		expression.Name("counter"),
+		expression.Value(1),
 	)
 	r.log.Info("updating entry", "entry", entry, "leaderboard", leaderboard, "value", value, "function", "Max")
+
 	// just stores if the existing score value is less than the one to be stored
 	condBuilder := expression.Name(scoreAttrib).LessThanEqual(expression.Value(value)).Or(expression.Name(scoreAttrib).AttributeNotExists())
 	expr, err := builder.WithUpdate(update).WithCondition(condBuilder).Build()
 	if err != nil {
 		return domain.ScoreUpdate{}, fmt.Errorf("failed to build update expression: %w", err)
 	}
+
 	input := dynamodb.UpdateItemInput{
 		TableName:                 aws.String(r.tableName),
 		ExpressionAttributeNames:  expr.Names(),
@@ -146,10 +157,13 @@ func (r *DynamoDBRepository) Min(entry string, leaderboard string, value float64
 	update := expression.Set(
 		expression.Name(scoreAttrib),
 		expression.Value(value),
+	).Add(
+		expression.Name("counter"),
+		expression.Value(1),
 	)
-	r.log.Info("updating entry", "entry", entry, "leaderboard", leaderboard, "value", value, "function", "Min")
-	// just stores if the existing score value is greater than the one to be stored
+	r.log.Debug("updating entry", "entry", entry, "leaderboard", leaderboard, "value", value, "function", "Min")
 
+	// just stores if the existing score value is greater than the one to be stored
 	condBuilder := expression.Name(scoreAttrib).GreaterThanEqual(expression.Value(value)).Or(expression.Name(scoreAttrib).AttributeNotExists())
 
 	expr, err := builder.WithUpdate(update).WithCondition(condBuilder).Build()
@@ -191,6 +205,9 @@ func (r *DynamoDBRepository) Last(entry string, leaderboard string, value float6
 	update := expression.Set(
 		expression.Name(scoreAttrib),
 		expression.Value(value),
+	).Add(
+		expression.Name("counter"),
+		expression.Value(1),
 	)
 
 	r.log.Info("updating entry", "entry", entry, "leaderboard", leaderboard, "value", value, "function", "Last")

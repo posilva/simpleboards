@@ -218,13 +218,29 @@ func (mr *MockLeaderboardsServiceMockRecorder) GetConfig(name any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockLeaderboardsService)(nil).GetConfig), name)
 }
 
-// ListScores mocks base method.
-func (m *MockLeaderboardsService) ListScores(name string) ([]domain.LeaderboardScores, error) {
+// GetResults mocks base method.
+func (m *MockLeaderboardsService) GetResults(name string, epoch int64) ([]domain.LeaderboardScores, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListScores", name)
+	ret := m.ctrl.Call(m, "GetResults", name, epoch)
 	ret0, _ := ret[0].([]domain.LeaderboardScores)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
+}
+
+// GetResults indicates an expected call of GetResults.
+func (mr *MockLeaderboardsServiceMockRecorder) GetResults(name, epoch any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetResults", reflect.TypeOf((*MockLeaderboardsService)(nil).GetResults), name, epoch)
+}
+
+// ListScores mocks base method.
+func (m *MockLeaderboardsService) ListScores(name string) ([]domain.LeaderboardScores, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListScores", name)
+	ret0, _ := ret[0].([]domain.LeaderboardScores)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // ListScores indicates an expected call of ListScores.
@@ -234,10 +250,10 @@ func (mr *MockLeaderboardsServiceMockRecorder) ListScores(name any) *gomock.Call
 }
 
 // ReportScore mocks base method.
-func (m *MockLeaderboardsService) ReportScore(entryID, name string, value float64) (float64, error) {
+func (m *MockLeaderboardsService) ReportScore(entryID, name string, value float64) (domain.ReportScoreOutput, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ReportScore", entryID, name, value)
-	ret0, _ := ret[0].(float64)
+	ret0, _ := ret[0].(domain.ReportScoreOutput)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

@@ -31,16 +31,14 @@ func TestReportScore(t *testing.T) {
 	configProvider := defaultConfigProviderMock(ctrl, lbName)
 	nameEpoch, _, err := GetLeaderboardNameWithEpoch(lbName, domain.Hourly)
 	assert.NoError(t, err)
-	repo.EXPECT().Add(entryID, nameEpoch, value).Return(domain.ScoreUpdate{Score: value}, nil)
+	repo.EXPECT().Add(entryID, nameEpoch, value).Return(domain.ScoreUpdate{Score: value, Done: true}, nil)
 	scoreboard.EXPECT().AddScore(entryID, nameEpoch, value).Return(nil)
-
 	lbSrv := NewLeaderboardsService(repo, scoreboard, configProvider)
 
 	v, err := lbSrv.ReportScore(entryID, lbName, value)
-
 	assert.NoError(t, err)
 	assert.Nil(t, nil)
-	assert.Equal(t, value, v.Score)
+	assert.Equal(t, value, v.Update.Score)
 }
 
 func TestListScores(t *testing.T) {

@@ -15,7 +15,7 @@ const (
 	refreshIntervalSecs = 5
 )
 
-type SimpleConfigProvider[T domain.LeaderboardsConfigMap] struct {
+type DynamoConfigProvider[T domain.LeaderboardsConfigMap] struct {
 	lock          sync.RWMutex
 	configGetter  ports.ConfigGetter
 	currentConfig domain.LeaderboardsConfigMap
@@ -24,9 +24,9 @@ type SimpleConfigProvider[T domain.LeaderboardsConfigMap] struct {
 	logger        ports.Logger
 }
 
-func NewSimpleConfigProvider(configGetter ports.ConfigGetter, logger ports.Logger) *SimpleConfigProvider[domain.LeaderboardsConfigMap] {
-	cp := SimpleConfigProvider[domain.LeaderboardsConfigMap]{
-		err:           errors.New("config not initiatiazed"),
+func NewDynamoConfigProvider(configGetter ports.ConfigGetter, logger ports.Logger) *DynamoConfigProvider[domain.LeaderboardsConfigMap] {
+	cp := DynamoConfigProvider[domain.LeaderboardsConfigMap]{
+		err:           errors.New("config not initialized"),
 		currentConfig: nil,
 		logger:        logger,
 		configGetter:  configGetter,
@@ -36,10 +36,11 @@ func NewSimpleConfigProvider(configGetter ports.ConfigGetter, logger ports.Logge
 	return &cp
 }
 
-func (cp *SimpleConfigProvider[T]) Refresh() {
+func (cp *DynamoConfigProvider[T]) Refresh() {
 	cp.lock.Lock()
 	defer cp.lock.Unlock()
 	cfgMap, err := cp.configGetter.GetConfig()
+	cp.logger.Debug("Refreshing configuration: %v", cfgMap)
 	if err != nil {
 		cp.logger.Error("failed to get configuration: %v", err)
 		return
@@ -48,7 +49,7 @@ func (cp *SimpleConfigProvider[T]) Refresh() {
 }
 
 // Provide configurations for the leaderboard:s
-func (cp *SimpleConfigProvider[T]) Provide() (domain.LeaderboardsConfigMap, error) {
+func (cp *DynamoConfigProvider[T]) Provide() (domain.LeaderboardsConfigMap, error) {
 	cp.lock.RLock()
 	defer cp.lock.RUnlock()
 

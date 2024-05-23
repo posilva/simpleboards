@@ -52,6 +52,23 @@ func NewLeaderboardConfig(name string, from uint64, to uint64, action string) do
 	}
 }
 
+func NewLeaderboardConfigWithFunctionReset(name string, reset domain.LeaderboardResetType, function domain.LeaderboardFunctionType) domain.LeaderboardConfig {
+	return domain.LeaderboardConfig{
+		Name:     name,
+		Function: function,
+		Reset:    reset,
+		PrizeTable: domain.LeaderboardPrizeTable{
+			Table: []domain.LeaderboardPrize{
+				{
+					RankFrom: 1,
+					RankTo:   1,
+					Action:   "reward 1",
+				},
+			},
+		},
+	}
+
+}
 func NewMockDefaultDynamoDBSettings(client repository.DynamoDBClient) repository.DynamoDBSettings {
 	return repository.DynamoDBSettings{
 		Client: client,

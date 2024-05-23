@@ -54,16 +54,35 @@ func (s *LeaderboardsService) ReportScore(entryID string, name string, score flo
 		return domain.ReportScoreOutput{}, fmt.Errorf("failed to generate name from configs: %v", err)
 	}
 
-	v, err := s.repository.Add(entryID, leaderboard, score)
+	lbFn := func() (domain.ScoreUpdate, error) {
+		return s.repository.Add(entryID, leaderboard, score)
+	}
+	switch config.Function {
+	case domain.Max:
+		lbFn = func() (domain.ScoreUpdate, error) {
+			return s.repository.Max(entryID, leaderboard, score)
+		}
+	case domain.Min:
+		lbFn = func() (domain.ScoreUpdate, error) {
+			return s.repository.Min(entryID, leaderboard, score)
+		}
+	case domain.Last:
+		lbFn = func() (domain.ScoreUpdate, error) {
+			return s.repository.Last(entryID, leaderboard, score)
+		}
+	}
+	v, err := lbFn()
 	if err != nil {
-		return domain.ReportScoreOutput{}, fmt.Errorf("failed to add score to repository: %v", err)
+		return domain.ReportScoreOutput{}, fmt.Errorf("failed to apply functoin to the  score: %v", err)
+	}
+	if v.Done {
+		err = s.scoreboard.AddScore(entryID, leaderboard, v.Score)
+		if err != nil {
+			return domain.ReportScoreOutput{}, fmt.Errorf("failed to add score to scoreboard: %v", err)
+		}
 	}
 
-	err = s.scoreboard.AddScore(entryID, leaderboard, score)
-	if err != nil {
-		return domain.ReportScoreOutput{}, fmt.Errorf("failed to add score to scoreboard: %v", err)
-	}
-	return domain.ReportScoreOutput{Score: v.Score, Epoch: epoch}, nil
+	return domain.ReportScoreOutput{Update: v, Epoch: epoch}, nil
 }
 
 // ListScores returns a list of scores from leaderboards

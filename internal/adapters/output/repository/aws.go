@@ -3,6 +3,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -35,9 +36,11 @@ func DefaultLocalAWSClientConfig() aws.Config {
 	region := "us-east-1"
 
 	if v, ok := os.LookupEnv("AWS_ENDPOINT"); ok {
+		fmt.Println("Using custom endpoint", v)
 		host = v
 	}
 	if v, ok := os.LookupEnv("AWS_DEFAULT_REGION"); ok {
+		fmt.Println("Using custom region", v)
 		region = v
 	}
 

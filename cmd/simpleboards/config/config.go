@@ -40,3 +40,21 @@ func GetDynamoDBTableName() string {
 func GetRedisAddr() string {
 	return viper.GetString(redisAddr)
 }
+
+func IsLocal() bool {
+	return viper.GetBool("local")
+}
+
+func SetDynamoDBTableName(v string) {
+	viper.Set(ddbTablename, v)
+}
+
+func SetRedisAddr(v string) {
+	viper.Set(redisAddr, v)
+}
+func SetAddr(v string) {
+	viper.Set(httpAddr, v)
+}
+func SetLocal(v bool) {
+	viper.Set("local", v)
+}

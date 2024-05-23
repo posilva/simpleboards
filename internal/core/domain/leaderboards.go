@@ -65,11 +65,12 @@ type LeaderboardScores struct {
 }
 
 type ScoreUpdate struct {
-	Score float64
-	Done  bool
+	Score   float64 `json:"score,omitempty"`
+	Done    bool    `json:"done,omitempty"`
+	Counter uint64  `json:"counter,omitempty"`
 }
 
 type ReportScoreOutput struct {
-	Score float64
-	Epoch int64
+	Update ScoreUpdate
+	Epoch  int64
 }
