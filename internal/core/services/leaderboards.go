@@ -8,14 +8,14 @@ import (
 	"github.com/posilva/simpleboards/internal/core/ports"
 )
 
-// LeaderboardsService
+// LeaderboardsService ...
 type LeaderboardsService struct {
 	repository    ports.Repository
 	scoreboard    ports.Scoreboard
 	configuration ports.Provider[domain.LeaderboardsConfigMap]
 }
 
-// NewLeaderboardsServige creates a new leaderboards service
+// NewLeaderboardsService creates a new leaderboards service
 func NewLeaderboardsService(
 	repo ports.Repository,
 	scoreboard ports.Scoreboard,
@@ -38,7 +38,6 @@ func (s *LeaderboardsService) GetConfig(name string) (domain.LeaderboardConfig, 
 	if !ok {
 		return domain.LeaderboardConfig{}, fmt.Errorf("leaderboard config not found: %v", name)
 	}
-
 	return config, nil
 }
 
@@ -54,10 +53,27 @@ func (s *LeaderboardsService) ReportScore(entryID string, name string, score flo
 		return domain.ReportScoreOutput{}, fmt.Errorf("failed to generate name from configs: %v", err)
 	}
 
+	lbFn := s.applyFunction(entryID, leaderboard, score, config.Function)
+	v, err := lbFn()
+	if err != nil {
+		return domain.ReportScoreOutput{}, fmt.Errorf("failed to apply functoin to the  score: %v", err)
+	}
+	if v.Done {
+		err = s.scoreboard.AddScore(entryID, leaderboard, v.Score)
+		if err != nil {
+			return domain.ReportScoreOutput{}, fmt.Errorf("failed to add score to scoreboard: %v", err)
+		}
+	}
+
+	return domain.ReportScoreOutput{Update: v, Epoch: epoch}, nil
+}
+
+func (s *LeaderboardsService) applyFunction(entryID string, leaderboard string, score float64, configFunction domain.LeaderboardFunctionType) func() (domain.ScoreUpdate, error) {
 	lbFn := func() (domain.ScoreUpdate, error) {
 		return s.repository.Add(entryID, leaderboard, score)
 	}
-	switch config.Function {
+
+	switch configFunction {
 	case domain.Max:
 		lbFn = func() (domain.ScoreUpdate, error) {
 			return s.repository.Max(entryID, leaderboard, score)
@@ -71,18 +87,7 @@ func (s *LeaderboardsService) ReportScore(entryID string, name string, score flo
 			return s.repository.Last(entryID, leaderboard, score)
 		}
 	}
-	v, err := lbFn()
-	if err != nil {
-		return domain.ReportScoreOutput{}, fmt.Errorf("failed to apply functoin to the  score: %v", err)
-	}
-	if v.Done {
-		err = s.scoreboard.AddScore(entryID, leaderboard, v.Score)
-		if err != nil {
-			return domain.ReportScoreOutput{}, fmt.Errorf("failed to add score to scoreboard: %v", err)
-		}
-	}
-
-	return domain.ReportScoreOutput{Update: v, Epoch: epoch}, nil
+	return lbFn
 }
 
 // ListScores returns a list of scores from leaderboards
