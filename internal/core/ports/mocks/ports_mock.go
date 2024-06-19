@@ -55,6 +55,21 @@ func (mr *MockRepositoryMockRecorder) Add(entry, leaderboard, value any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockRepository)(nil).Add), entry, leaderboard, value)
 }
 
+// AddWithMetadata mocks base method.
+func (m *MockRepository) AddWithMetadata(entry, leaderboard string, value float64, meta domain.Metadata) (domain.ScoreUpdate, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddWithMetadata", entry, leaderboard, value, meta)
+	ret0, _ := ret[0].(domain.ScoreUpdate)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddWithMetadata indicates an expected call of AddWithMetadata.
+func (mr *MockRepositoryMockRecorder) AddWithMetadata(entry, leaderboard, value, meta any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddWithMetadata", reflect.TypeOf((*MockRepository)(nil).AddWithMetadata), entry, leaderboard, value, meta)
+}
+
 // Last mocks base method.
 func (m *MockRepository) Last(entry, leaderboard string, value float64) (domain.ScoreUpdate, error) {
 	m.ctrl.T.Helper()
@@ -68,6 +83,21 @@ func (m *MockRepository) Last(entry, leaderboard string, value float64) (domain.
 func (mr *MockRepositoryMockRecorder) Last(entry, leaderboard, value any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Last", reflect.TypeOf((*MockRepository)(nil).Last), entry, leaderboard, value)
+}
+
+// LastWithMetadata mocks base method.
+func (m *MockRepository) LastWithMetadata(entry, leaderboard string, value float64, meta domain.Metadata) (domain.ScoreUpdate, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LastWithMetadata", entry, leaderboard, value, meta)
+	ret0, _ := ret[0].(domain.ScoreUpdate)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LastWithMetadata indicates an expected call of LastWithMetadata.
+func (mr *MockRepositoryMockRecorder) LastWithMetadata(entry, leaderboard, value, meta any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LastWithMetadata", reflect.TypeOf((*MockRepository)(nil).LastWithMetadata), entry, leaderboard, value, meta)
 }
 
 // Max mocks base method.
@@ -85,6 +115,21 @@ func (mr *MockRepositoryMockRecorder) Max(entry, leaderboard, value any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Max", reflect.TypeOf((*MockRepository)(nil).Max), entry, leaderboard, value)
 }
 
+// MaxWithMetadata mocks base method.
+func (m *MockRepository) MaxWithMetadata(entry, leaderboard string, value float64, meta domain.Metadata) (domain.ScoreUpdate, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MaxWithMetadata", entry, leaderboard, value, meta)
+	ret0, _ := ret[0].(domain.ScoreUpdate)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MaxWithMetadata indicates an expected call of MaxWithMetadata.
+func (mr *MockRepositoryMockRecorder) MaxWithMetadata(entry, leaderboard, value, meta any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MaxWithMetadata", reflect.TypeOf((*MockRepository)(nil).MaxWithMetadata), entry, leaderboard, value, meta)
+}
+
 // Min mocks base method.
 func (m *MockRepository) Min(entry, leaderboard string, value float64) (domain.ScoreUpdate, error) {
 	m.ctrl.T.Helper()
@@ -98,6 +143,21 @@ func (m *MockRepository) Min(entry, leaderboard string, value float64) (domain.S
 func (mr *MockRepositoryMockRecorder) Min(entry, leaderboard, value any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Min", reflect.TypeOf((*MockRepository)(nil).Min), entry, leaderboard, value)
+}
+
+// MinWithMetadata mocks base method.
+func (m *MockRepository) MinWithMetadata(entry, leaderboard string, value float64, meta domain.Metadata) (domain.ScoreUpdate, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MinWithMetadata", entry, leaderboard, value, meta)
+	ret0, _ := ret[0].(domain.ScoreUpdate)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MinWithMetadata indicates an expected call of MinWithMetadata.
+func (mr *MockRepositoryMockRecorder) MinWithMetadata(entry, leaderboard, value, meta any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MinWithMetadata", reflect.TypeOf((*MockRepository)(nil).MinWithMetadata), entry, leaderboard, value, meta)
 }
 
 // MockLogger is a mock of Logger interface.
@@ -262,6 +322,21 @@ func (m *MockLeaderboardsService) ReportScore(entryID, name string, value float6
 func (mr *MockLeaderboardsServiceMockRecorder) ReportScore(entryID, name, value any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReportScore", reflect.TypeOf((*MockLeaderboardsService)(nil).ReportScore), entryID, name, value)
+}
+
+// ReportScoreWithMetadata mocks base method.
+func (m *MockLeaderboardsService) ReportScoreWithMetadata(entryID, name string, value float64, meta domain.Metadata) (domain.ReportScoreOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReportScoreWithMetadata", entryID, name, value, meta)
+	ret0, _ := ret[0].(domain.ReportScoreOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ReportScoreWithMetadata indicates an expected call of ReportScoreWithMetadata.
+func (mr *MockLeaderboardsServiceMockRecorder) ReportScoreWithMetadata(entryID, name, value, meta any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReportScoreWithMetadata", reflect.TypeOf((*MockLeaderboardsService)(nil).ReportScoreWithMetadata), entryID, name, value, meta)
 }
 
 // MockScoreboard is a mock of Scoreboard interface.

@@ -30,13 +30,14 @@ const (
 	scoreAttrib    = "score"
 )
 
+// DDBConfigItem ...
 type DDBConfigItem struct {
 	PK     string `dynamodbav:"pk"`
 	SK     string `dynamodbav:"sk"`
 	Config string `dynamodbav:"config"`
 }
 
-// leaderboardEntryRecord represents a dynamodb table record
+// LeaderboardEntryRecord represents a dynamodb table record
 type LeaderboardEntryRecord struct {
 	PK      string  `dynamodbav:"pk" json:"pk"`
 	SK      string  `dynamodbav:"sk" json:"sk"`
@@ -60,8 +61,8 @@ func NewDynamoDBRepository(settings DynamoDBSettings) (*DynamoDBRepository, erro
 	}, nil
 }
 
-// Add the value to the entry
-func (r *DynamoDBRepository) Add(entry string, leaderboard string, value float64) (domain.ScoreUpdate, error) {
+// AddWithMetadata the value to the entry
+func (r *DynamoDBRepository) AddWithMetadata(entry string, leaderboard string, value float64, meta domain.Metadata) (domain.ScoreUpdate, error) {
 	builder := expression.NewBuilder()
 	update := expression.Add(
 		expression.Name("score"),
@@ -104,7 +105,8 @@ func (r *DynamoDBRepository) Add(entry string, leaderboard string, value float64
 	return res, nil
 }
 
-func (r *DynamoDBRepository) Max(entry string, leaderboard string, value float64) (domain.ScoreUpdate, error) {
+// MaxWithMetadata ...
+func (r *DynamoDBRepository) MaxWithMetadata(entry string, leaderboard string, value float64, meta domain.Metadata) (domain.ScoreUpdate, error) {
 	builder := expression.NewBuilder()
 	update := expression.Set(
 		expression.Name(scoreAttrib),
@@ -152,7 +154,8 @@ func (r *DynamoDBRepository) Max(entry string, leaderboard string, value float64
 	return domain.ScoreUpdate{Score: s.Score, Done: true}, nil
 }
 
-func (r *DynamoDBRepository) Min(entry string, leaderboard string, value float64) (domain.ScoreUpdate, error) {
+// MinWithMetadata ...
+func (r *DynamoDBRepository) MinWithMetadata(entry string, leaderboard string, value float64, meta domain.Metadata) (domain.ScoreUpdate, error) {
 	builder := expression.NewBuilder()
 	update := expression.Set(
 		expression.Name(scoreAttrib),
@@ -200,7 +203,8 @@ func (r *DynamoDBRepository) Min(entry string, leaderboard string, value float64
 	return domain.ScoreUpdate{Score: s.Score, Done: true}, nil
 }
 
-func (r *DynamoDBRepository) Last(entry string, leaderboard string, value float64) (domain.ScoreUpdate, error) {
+// LastWithMetadata ...
+func (r *DynamoDBRepository) LastWithMetadata(entry string, leaderboard string, value float64, meta domain.Metadata) (domain.ScoreUpdate, error) {
 	builder := expression.NewBuilder()
 	update := expression.Set(
 		expression.Name(scoreAttrib),
@@ -242,7 +246,7 @@ func (r *DynamoDBRepository) Last(entry string, leaderboard string, value float6
 	return domain.ScoreUpdate{Score: s.Score, Done: true}, nil
 }
 
-// GetConfigs returns all existing leaderboards
+// GetConfig returns all existing leaderboards
 func (r *DynamoDBRepository) GetConfig() (domain.LeaderboardsConfigMap, error) {
 	ctx, cancel := context.WithTimeoutCause(context.Background(), 1*time.Second, errors.New("get configuration timeout"))
 	defer cancel()
@@ -290,7 +294,7 @@ func (r *DynamoDBRepository) ResetLock(leaderboard string, epoch int, duration t
 }
 
 // Update configuration
-func (cp *DynamoDBRepository) Update(name string, config domain.LeaderboardConfig) error {
+func (r *DynamoDBRepository) Update(name string, config domain.LeaderboardConfig) error {
 	ctx, cancel := context.WithTimeoutCause(context.Background(), 1*time.Second, errors.New("get configuration timeout"))
 	defer cancel()
 
@@ -310,16 +314,36 @@ func (cp *DynamoDBRepository) Update(name string, config domain.LeaderboardConfi
 		panic(fmt.Sprintf("failed to marshalMap: %v ", err))
 	}
 	input := dynamodb.PutItemInput{
-		TableName:    aws.String(cp.tableName),
+		TableName:    aws.String(r.tableName),
 		Item:         item,
 		ReturnValues: types.ReturnValueNone,
 	}
 
-	_, err = cp.client.PutItem(ctx, &input)
+	_, err = r.client.PutItem(ctx, &input)
 	if err != nil {
 		return fmt.Errorf("failed to put item: %v", err)
 	}
 	return nil
+}
+
+// Add ...
+func (r *DynamoDBRepository) Add(entry string, leaderboard string, value float64) (domain.ScoreUpdate, error) {
+	return r.AddWithMetadata(entry, leaderboard, value, nil)
+}
+
+// Min ...
+func (r *DynamoDBRepository) Min(entry string, leaderboard string, value float64) (domain.ScoreUpdate, error) {
+	return r.MinWithMetadata(entry, leaderboard, value, nil)
+}
+
+// Max ...
+func (r *DynamoDBRepository) Max(entry string, leaderboard string, value float64) (domain.ScoreUpdate, error) {
+	return r.MaxWithMetadata(entry, leaderboard, value, nil)
+}
+
+// Last ...
+func (r *DynamoDBRepository) Last(entry string, leaderboard string, value float64) (domain.ScoreUpdate, error) {
+	return r.LastWithMetadata(entry, leaderboard, value, nil)
 }
 
 func pkValue(value string) string {

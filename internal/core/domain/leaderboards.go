@@ -1,5 +1,8 @@
 package domain
 
+// Metadata type
+type Metadata map[string]string
+
 // LeaderboardsConfigMap is a map for leaderboards configuration
 type LeaderboardsConfigMap = map[string]LeaderboardConfig
 
