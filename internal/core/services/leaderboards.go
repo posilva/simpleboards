@@ -58,14 +58,37 @@ func (s *LeaderboardsService) ReportScore(entryID string, name string, score flo
 	if err != nil {
 		return domain.ReportScoreOutput{}, fmt.Errorf("failed to apply functoin to the  score: %v", err)
 	}
+
 	if v.Done {
+		// Global scoreboard
 		err = s.scoreboard.AddScore(entryID, leaderboard, v.Score)
 		if err != nil {
 			return domain.ReportScoreOutput{}, fmt.Errorf("failed to add score to scoreboard: %v", err)
 		}
+
+		if config.Scoreboards != nil && len(config.Scoreboards) > 0 {
+			for _, sb := range config.Scoreboards {
+				lb := s.sbNameFromType(name, epoch, sb)
+				err = s.scoreboard.AddScore(entryID, lb, v.Score)
+				if err != nil {
+					return domain.ReportScoreOutput{}, fmt.Errorf("failed to add score to scoreboard: %v", err)
+				}
+			}
+		}
 	}
 
 	return domain.ReportScoreOutput{Update: v, Epoch: epoch}, nil
+}
+
+func (s *LeaderboardsService) sbNameFromType(lb string, epoch int64, sb domain.LeaderboardScoreBoardConfig) string {
+	switch sb.Type {
+	case domain.League:
+		return fmt.Sprintf("%s::%s::%d", lb, "league", epoch)
+	case domain.Country:
+		return fmt.Sprintf("%s::%s::%d", lb, "country", epoch)
+	default:
+		return fmt.Sprintf("%s::%d", lb, epoch)
+	}
 }
 
 func (s *LeaderboardsService) applyFunction(entryID string, leaderboard string, score float64, configFunction domain.LeaderboardFunctionType) func() (domain.ScoreUpdate, error) {
@@ -121,14 +144,15 @@ func (s *LeaderboardsService) ListScores(name string) ([]domain.LeaderboardScore
 	return []domain.LeaderboardScores{resultScores}, epoch, nil
 }
 
+// GetResults returns a list of scores from leaderboards
 func (s *LeaderboardsService) GetResults(name string, epoch int64) ([]domain.LeaderboardScores, error) {
 	config, err := s.GetConfig(name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch configs: %v", err)
 	}
+	allResults := []domain.LeaderboardScores{}
 
 	leaderboard := getNameWithEpoch(name, epoch)
-
 	scores, err := s.scoreboard.Get(leaderboard)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch scores: %v", err)
@@ -146,7 +170,35 @@ func (s *LeaderboardsService) GetResults(name string, epoch int64) ([]domain.Lea
 			Rank:    score.Rank,
 		})
 	}
-	return []domain.LeaderboardScores{resultScores}, nil
+	allResults = append(allResults, resultScores)
+
+	if config.Scoreboards != nil && len(config.Scoreboards) > 0 {
+		for _, sb := range config.Scoreboards {
+			leaderboard = s.sbNameFromType(name, epoch, sb)
+			scores, err := s.scoreboard.Get(leaderboard)
+			if err != nil {
+				return nil, fmt.Errorf("failed to fetch scores: %v", err)
+			}
+			// TODO: get the prize table ranks
+			_ = config
+
+			// TODO: should get the score boards
+			resultScores := domain.LeaderboardScores{}
+			resultScores.Name = leaderboard
+			for _, score := range scores {
+				resultScores.Scores = append(resultScores.Scores, domain.LeaderboardEntry{
+					EntryID: score.EntryID,
+					Score:   score.Score,
+					Rank:    score.Rank,
+				})
+			}
+
+			allResults = append(allResults, resultScores)
+		}
+
+	}
+
+	return allResults, nil
 }
 
 // TODO: Create the name from the current timestamp and configuration settings

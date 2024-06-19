@@ -52,6 +52,34 @@ func NewLeaderboardConfig(name string, from uint64, to uint64, action string) do
 	}
 }
 
+func NewLeaderboardConfigWithScoreboards(name string, reset domain.LeaderboardResetType, function domain.LeaderboardFunctionType) domain.LeaderboardConfig {
+	return domain.LeaderboardConfig{
+		Name:     name,
+		Function: function,
+		Reset:    reset,
+		PrizeTable: domain.LeaderboardPrizeTable{
+			Table: []domain.LeaderboardPrize{
+				{
+					RankFrom: 1,
+					RankTo:   1,
+					Action:   "reward 1",
+				},
+			},
+		},
+		Scoreboards: []domain.LeaderboardScoreBoardConfig{
+			{
+				Type:  domain.League,
+				Field: "league",
+			},
+			{
+				Type:  domain.Country,
+				Field: "country",
+			},
+		},
+	}
+
+}
+
 func NewLeaderboardConfigWithFunctionReset(name string, reset domain.LeaderboardResetType, function domain.LeaderboardFunctionType) domain.LeaderboardConfig {
 	return domain.LeaderboardConfig{
 		Name:     name,
