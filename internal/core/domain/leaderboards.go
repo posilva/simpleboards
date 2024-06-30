@@ -1,5 +1,8 @@
 package domain
 
+// Metadata type
+type Metadata map[string]string
+
 // LeaderboardsConfigMap is a map for leaderboards configuration
 type LeaderboardsConfigMap = map[string]LeaderboardConfig
 
@@ -39,12 +42,25 @@ type LeaderboardPrize struct {
 	Action   string `json:"action"`
 }
 
+type ScoreboardType = int
+
+const (
+	League ScoreboardType = iota
+	Country
+)
+
+type LeaderboardScoreBoardConfig struct {
+	Type  ScoreboardType `json:"type"`
+	Field string         `json:"field"`
+}
+
 // LeaderboardConfig holds information of a Leaderboard instance
 type LeaderboardConfig struct {
-	Name       string                  `json:"name"`
-	Function   LeaderboardFunctionType `json:"function"`
-	Reset      LeaderboardResetType    `json:"reset_type"`
-	PrizeTable LeaderboardPrizeTable   `json:"prizes_table"`
+	Name        string                        `json:"name"`
+	Function    LeaderboardFunctionType       `json:"function"`
+	Reset       LeaderboardResetType          `json:"reset_type"`
+	PrizeTable  LeaderboardPrizeTable         `json:"prizes_table"`
+	Scoreboards []LeaderboardScoreBoardConfig `json:"scoreboards"`
 }
 
 // TODO: add a field to represent the metadata to show in the UI
@@ -65,9 +81,10 @@ type LeaderboardScores struct {
 }
 
 type ScoreUpdate struct {
-	Score   float64 `json:"score,omitempty"`
-	Done    bool    `json:"done,omitempty"`
-	Counter uint64  `json:"counter,omitempty"`
+	Score    float64           `json:"score,omitempty"`
+	Done     bool              `json:"done,omitempty"`
+	Counter  uint64            `json:"counter,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 type ReportScoreOutput struct {

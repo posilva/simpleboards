@@ -1,7 +1,6 @@
 package configprovider
 
 import (
-	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -28,7 +27,6 @@ func (tc *testCounter) Get() int {
 }
 
 func TestDynamoDBConfigProvider(t *testing.T) {
-	fmt.Printf("Init Exec Job: %v\n", time.Now().Unix())
 	counter := testCounter{}
 	s := services.NewScheduler(1, counter.Add)
 	assert.NotNil(t, s)

@@ -3,17 +3,19 @@ package tests
 import (
 	"context"
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"time"
+
 	"github.com/docker/docker/pkg/ioutils"
+	"github.com/google/uuid"
 	"github.com/phayes/freeport"
 	"github.com/posilva/simpleboards/cmd/simpleboards/app"
 	"github.com/posilva/simpleboards/cmd/simpleboards/config"
 	"github.com/posilva/simpleboards/internal/adapters/output/repository"
 	"github.com/posilva/simpleboards/internal/core/domain"
 	"github.com/stretchr/testify/require"
-	"log"
-	"net/http"
-	"os"
-	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
@@ -30,11 +32,16 @@ import (
 )
 
 var (
-	defaultLbName     = "integration_lb_tests"
+	uniqueTestID      = uuid.NewString()
+	defaultLbName     = "integration_lb_tests::" + uniqueTestID
 	defaultLbNameSum  = defaultLbName + "::Sum"
 	defaultLbNameMax  = defaultLbName + "::Max"
 	defaultLbNameMin  = defaultLbName + "::Min"
 	defaultLbNameLast = defaultLbName + "::Last"
+	metadataDefault   = map[string]string{
+		"country": "PT",
+		"league":  "gold",
+	}
 )
 
 type BaseTestSuite struct {
@@ -217,8 +224,11 @@ func configLeaderboard(lbName string) {
 	if err != nil {
 		panic(err)
 	}
-	lbConfig := testutil.NewLeaderboardConfig(lbName, 1, 1, "reward 1")
+	lbConfig := testutil.NewLeaderboardConfigWithScoreboards(lbName, domain.Hourly, domain.Sum)
 	err = repo.Update(lbName, lbConfig)
+	if err != nil {
+		panic(err)
+	}
 	_, err = repo.GetConfig()
 	if err != nil {
 		panic(err)
@@ -230,8 +240,12 @@ func configLeaderboardFuncReset(lbName string, f domain.LeaderboardFunctionType,
 	if err != nil {
 		panic(err)
 	}
-	lbConfig := testutil.NewLeaderboardConfigWithFunctionReset(lbName, r, f)
+	lbConfig := testutil.NewLeaderboardConfigWithFunctionResetWithScoreboards(lbName, r, f)
 	err = repo.Update(lbName, lbConfig)
+	if err != nil {
+		panic(err)
+	}
+
 	_, err = repo.GetConfig()
 	if err != nil {
 		panic(err)
