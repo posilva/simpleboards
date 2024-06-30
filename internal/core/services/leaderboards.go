@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/posilva/simpleboards/internal/core/domain"
@@ -41,8 +42,15 @@ func (s *LeaderboardsService) GetConfig(name string) (domain.LeaderboardConfig, 
 	return config, nil
 }
 
-// ReportScore  register a new score to a given entry on a leaderboard
+// ReportScore ...
 func (s *LeaderboardsService) ReportScore(entryID string, name string, score float64) (domain.ReportScoreOutput, error) {
+	return s.ReportScoreWithMetadata(entryID, name, score, nil)
+}
+
+// ReportScoreWithMetadata ...
+func (s *LeaderboardsService) ReportScoreWithMetadata(entryID string, name string, score float64, meta domain.Metadata) (domain.ReportScoreOutput, error) {
+
+	// ReportScore  register a new score to a given entry on a leaderboard
 	config, err := s.GetConfig(name)
 	if err != nil {
 		return domain.ReportScoreOutput{}, fmt.Errorf("failed to fetch configs: %v", err)
@@ -53,7 +61,7 @@ func (s *LeaderboardsService) ReportScore(entryID string, name string, score flo
 		return domain.ReportScoreOutput{}, fmt.Errorf("failed to generate name from configs: %v", err)
 	}
 
-	lbFn := s.applyFunction(entryID, leaderboard, score, config.Function)
+	lbFn := s.applyFunction(entryID, leaderboard, score, config.Function, meta)
 	v, err := lbFn()
 	if err != nil {
 		return domain.ReportScoreOutput{}, fmt.Errorf("failed to apply functoin to the  score: %v", err)
@@ -65,10 +73,11 @@ func (s *LeaderboardsService) ReportScore(entryID string, name string, score flo
 		if err != nil {
 			return domain.ReportScoreOutput{}, fmt.Errorf("failed to add score to scoreboard: %v", err)
 		}
-
+		// add to other scoreboards
 		if config.Scoreboards != nil && len(config.Scoreboards) > 0 {
 			for _, sb := range config.Scoreboards {
-				lb := s.sbNameFromType(name, epoch, sb)
+				// TODO: we may enforce to exist the config fields in the meta for correctness
+				lb := s.sbNameFromType(name, epoch, sb, meta[sb.Field])
 				err = s.scoreboard.AddScore(entryID, lb, v.Score)
 				if err != nil {
 					return domain.ReportScoreOutput{}, fmt.Errorf("failed to add score to scoreboard: %v", err)
@@ -80,46 +89,46 @@ func (s *LeaderboardsService) ReportScore(entryID string, name string, score flo
 	return domain.ReportScoreOutput{Update: v, Epoch: epoch}, nil
 }
 
-func (s *LeaderboardsService) sbNameFromType(lb string, epoch int64, sb domain.LeaderboardScoreBoardConfig) string {
+func (s *LeaderboardsService) sbNameFromType(lb string, epoch int64, sb domain.LeaderboardScoreBoardConfig, value string) string {
+	name := fmt.Sprintf("%s::%d", lb, epoch)
 	switch sb.Type {
 	case domain.League:
-		return fmt.Sprintf("%s::%s::%d", lb, "league", epoch)
+		name = fmt.Sprintf("%s::%s::%s::%d", lb, "league", value, epoch)
 	case domain.Country:
-		return fmt.Sprintf("%s::%s::%d", lb, "country", epoch)
-	default:
-		return fmt.Sprintf("%s::%d", lb, epoch)
+		name = fmt.Sprintf("%s::%s::%s::%d", lb, "country", value, epoch)
 	}
+	return strings.ToLower(name)
 }
 
-func (s *LeaderboardsService) applyFunction(entryID string, leaderboard string, score float64, configFunction domain.LeaderboardFunctionType) func() (domain.ScoreUpdate, error) {
+func (s *LeaderboardsService) applyFunction(entryID string, leaderboard string, score float64, configFunction domain.LeaderboardFunctionType, meta domain.Metadata) func() (domain.ScoreUpdate, error) {
 	lbFn := func() (domain.ScoreUpdate, error) {
-		return s.repository.Add(entryID, leaderboard, score)
+		return s.repository.AddWithMetadata(entryID, leaderboard, score, meta)
 	}
 
 	switch configFunction {
 	case domain.Max:
 		lbFn = func() (domain.ScoreUpdate, error) {
-			return s.repository.Max(entryID, leaderboard, score)
+			return s.repository.MaxWithMetadata(entryID, leaderboard, score, meta)
 		}
 	case domain.Min:
 		lbFn = func() (domain.ScoreUpdate, error) {
-			return s.repository.Min(entryID, leaderboard, score)
+			return s.repository.MinWithMetadata(entryID, leaderboard, score, meta)
 		}
 	case domain.Last:
 		lbFn = func() (domain.ScoreUpdate, error) {
-			return s.repository.Last(entryID, leaderboard, score)
+			return s.repository.LastWithMetadata(entryID, leaderboard, score, meta)
 		}
 	}
 	return lbFn
+
 }
 
-// ListScores returns a list of scores from leaderboards
-func (s *LeaderboardsService) ListScores(name string) ([]domain.LeaderboardScores, int64, error) {
+// ListScoresWithMetadata returns a list of scores from leaderboards with metadata
+func (s *LeaderboardsService) ListScoresWithMetadata(name string, meta domain.Metadata) ([]domain.LeaderboardScores, int64, error) {
 	config, err := s.GetConfig(name)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to fetch configs: %v", err)
 	}
-
 	leaderboard, epoch, err := GetLeaderboardNameWithEpoch(name, config.Reset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to generate name from configs: %v", err)
@@ -129,8 +138,8 @@ func (s *LeaderboardsService) ListScores(name string) ([]domain.LeaderboardScore
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to fetch scores: %v", err)
 	}
+	var allLeaderboardScores []domain.LeaderboardScores
 
-	// TODO: should get the score boards
 	resultScores := domain.LeaderboardScores{}
 	resultScores.Name = leaderboard
 	for _, score := range scores {
@@ -140,12 +149,43 @@ func (s *LeaderboardsService) ListScores(name string) ([]domain.LeaderboardScore
 			Rank:    score.Rank,
 		})
 	}
+	allLeaderboardScores = append(allLeaderboardScores, resultScores)
 
-	return []domain.LeaderboardScores{resultScores}, epoch, nil
+	if config.Scoreboards != nil && len(config.Scoreboards) > 0 {
+		for _, sb := range config.Scoreboards {
+			lb := s.sbNameFromType(name, epoch, sb, meta[sb.Field])
+			scores, err := s.scoreboard.Get(lb)
+			if err != nil {
+				return nil, 0, fmt.Errorf("failed to fetch scores for scoreboard: %v: %v", lb, err)
+			}
+			resultScores := domain.LeaderboardScores{}
+			resultScores.Name = lb
+			for _, score := range scores {
+				resultScores.Scores = append(resultScores.Scores, domain.LeaderboardEntry{
+					EntryID: score.EntryID,
+					Score:   score.Score,
+					Rank:    score.Rank,
+				})
+			}
+			allLeaderboardScores = append(allLeaderboardScores, resultScores)
+		}
+	}
+	return allLeaderboardScores, epoch, nil
+
+}
+
+// ListScores returns a list of scores from leaderboards
+func (s *LeaderboardsService) ListScores(name string) ([]domain.LeaderboardScores, int64, error) {
+	return s.ListScoresWithMetadata(name, nil)
 }
 
 // GetResults returns a list of scores from leaderboards
 func (s *LeaderboardsService) GetResults(name string, epoch int64) ([]domain.LeaderboardScores, error) {
+	return s.GetResultsWithMetadata(name, epoch, nil)
+}
+
+// GetResultsWithMetadata returns a list of scores from leaderboards
+func (s *LeaderboardsService) GetResultsWithMetadata(name string, epoch int64, meta domain.Metadata) ([]domain.LeaderboardScores, error) {
 	config, err := s.GetConfig(name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch configs: %v", err)
@@ -157,8 +197,6 @@ func (s *LeaderboardsService) GetResults(name string, epoch int64) ([]domain.Lea
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch scores: %v", err)
 	}
-	// TODO: get the prize table ranks
-	_ = config
 
 	// TODO: should get the score boards
 	resultScores := domain.LeaderboardScores{}
@@ -174,15 +212,12 @@ func (s *LeaderboardsService) GetResults(name string, epoch int64) ([]domain.Lea
 
 	if config.Scoreboards != nil && len(config.Scoreboards) > 0 {
 		for _, sb := range config.Scoreboards {
-			leaderboard = s.sbNameFromType(name, epoch, sb)
+			leaderboard = s.sbNameFromType(name, epoch, sb, meta[sb.Field])
 			scores, err := s.scoreboard.Get(leaderboard)
 			if err != nil {
 				return nil, fmt.Errorf("failed to fetch scores: %v", err)
 			}
-			// TODO: get the prize table ranks
-			_ = config
 
-			// TODO: should get the score boards
 			resultScores := domain.LeaderboardScores{}
 			resultScores.Name = leaderboard
 			for _, score := range scores {
@@ -207,11 +242,11 @@ func GetLeaderboardNameWithEpoch(name string, resetType domain.LeaderboardResetT
 	if err != nil {
 		return "", 0, err
 	}
-	return getNameWithEpoch(name, epoch), epoch, nil
+	return strings.ToLower(getNameWithEpoch(name, epoch)), epoch, nil
 }
 
 func getNameWithEpoch(name string, epoch int64) string {
-	return fmt.Sprintf("%s::%d", name, epoch)
+	return strings.ToLower(fmt.Sprintf("%s::%d", name, epoch))
 }
 
 func CalculateEpoch(resetType domain.LeaderboardResetType, posixTs int64) (int64, error) {

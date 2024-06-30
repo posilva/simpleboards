@@ -69,6 +69,9 @@ SK: LBRD#NAME#<name>
 ### Random notes
 
 - when putting a score we can add some metadata that will influence how what data to store in the records and also the scoreboards will be storing the score
-    - example:
+    - Example:
         - a country based score board will be based on country code and will enforce that the country cannot change during an epoch
         - a league based score board will use a league data to put the score in the score board of a league
+    - Affects:
+        - ReportScore
+

@@ -71,8 +71,13 @@ func (r *DynamoDBRepository) AddWithMetadata(entry string, leaderboard string, v
 		expression.Name("counter"),
 		expression.Value(1),
 	)
-	r.log.Debug("updating entry", "entry", entry, "leaderboard", leaderboard, "value", value, "function", "Add")
-	builder = builder.WithUpdate(update)
+	if meta != nil {
+		update = r.updateWithMetadata(meta, update)
+		condBuilder := r.builderFromMetadata(meta)
+		builder = builder.WithUpdate(update).WithCondition(condBuilder)
+	} else {
+		builder = builder.WithUpdate(update)
+	}
 
 	expr, err := builder.Build()
 	if err != nil {
@@ -87,7 +92,8 @@ func (r *DynamoDBRepository) AddWithMetadata(entry string, leaderboard string, v
 			hashKeyName: &types.AttributeValueMemberS{Value: pkValue(entry)},
 			sortKeyName: &types.AttributeValueMemberS{Value: skValue(leaderboard)},
 		},
-		UpdateExpression: expr.Update(),
+		UpdateExpression:    expr.Update(),
+		ConditionExpression: expr.Condition(),
 	}
 
 	output, err := r.client.UpdateItem(context.Background(), &input)
@@ -105,6 +111,10 @@ func (r *DynamoDBRepository) AddWithMetadata(entry string, leaderboard string, v
 	return res, nil
 }
 
+func addMetadataPrefix(k string) string {
+	return "md::" + k
+}
+
 // MaxWithMetadata ...
 func (r *DynamoDBRepository) MaxWithMetadata(entry string, leaderboard string, value float64, meta domain.Metadata) (domain.ScoreUpdate, error) {
 	builder := expression.NewBuilder()
@@ -115,10 +125,19 @@ func (r *DynamoDBRepository) MaxWithMetadata(entry string, leaderboard string, v
 		expression.Name("counter"),
 		expression.Value(1),
 	)
-	r.log.Info("updating entry", "entry", entry, "leaderboard", leaderboard, "value", value, "function", "Max")
 
 	// just stores if the existing score value is less than the one to be stored
-	condBuilder := expression.Name(scoreAttrib).LessThanEqual(expression.Value(value)).Or(expression.Name(scoreAttrib).AttributeNotExists())
+	condBuilder := expression.Name(scoreAttrib).
+		LessThanEqual(expression.Value(value)).
+		Or(expression.Name(scoreAttrib).AttributeNotExists())
+
+	if meta != nil {
+		// let's deal with metadata if exists
+		update = r.updateWithMetadata(meta, update)
+		cb := r.builderFromMetadata(meta)
+		condBuilder = condBuilder.And(cb)
+	}
+
 	expr, err := builder.WithUpdate(update).WithCondition(condBuilder).Build()
 	if err != nil {
 		return domain.ScoreUpdate{}, fmt.Errorf("failed to build update expression: %w", err)
@@ -151,23 +170,31 @@ func (r *DynamoDBRepository) MaxWithMetadata(entry string, leaderboard string, v
 		return domain.ScoreUpdate{}, fmt.Errorf("failed to process output: %w", err)
 	}
 
-	return domain.ScoreUpdate{Score: s.Score, Done: true}, nil
+	return domain.ScoreUpdate{Score: s.Score, Done: true, Counter: s.Counter}, nil
 }
 
 // MinWithMetadata ...
 func (r *DynamoDBRepository) MinWithMetadata(entry string, leaderboard string, value float64, meta domain.Metadata) (domain.ScoreUpdate, error) {
 	builder := expression.NewBuilder()
+	scoreName := expression.Name(scoreAttrib)
+	scoreVal := expression.Value(value)
 	update := expression.Set(
-		expression.Name(scoreAttrib),
-		expression.Value(value),
+		scoreName,
+		scoreVal,
 	).Add(
 		expression.Name("counter"),
 		expression.Value(1),
 	)
-	r.log.Debug("updating entry", "entry", entry, "leaderboard", leaderboard, "value", value, "function", "Min")
 
 	// just stores if the existing score value is greater than the one to be stored
-	condBuilder := expression.Name(scoreAttrib).GreaterThanEqual(expression.Value(value)).Or(expression.Name(scoreAttrib).AttributeNotExists())
+	condBuilder := expression.Or(expression.GreaterThanEqual(scoreName, scoreVal), expression.AttributeNotExists(scoreName))
+
+	if meta != nil {
+		// let's deal with metadata if exists
+		update = r.updateWithMetadata(meta, update)
+		cb := r.builderFromMetadata(meta)
+		condBuilder = expression.And(cb, condBuilder)
+	}
 
 	expr, err := builder.WithUpdate(update).WithCondition(condBuilder).Build()
 	if err != nil {
@@ -185,11 +212,11 @@ func (r *DynamoDBRepository) MinWithMetadata(entry string, leaderboard string, v
 		},
 		UpdateExpression: expr.Update(),
 	}
-
 	output, err := r.client.UpdateItem(context.Background(), &input)
 	if err != nil {
 		var ccfe *types.ConditionalCheckFailedException
 		if errors.As(err, &ccfe) {
+			r.log.Error("conditional check failed with reason: %v", err)
 			return domain.ScoreUpdate{Done: false}, nil
 		}
 		return domain.ScoreUpdate{}, fmt.Errorf("failed to update item: %w", err)
@@ -200,7 +227,52 @@ func (r *DynamoDBRepository) MinWithMetadata(entry string, leaderboard string, v
 	if err != nil {
 		return domain.ScoreUpdate{}, fmt.Errorf("failed to process output: %w", err)
 	}
-	return domain.ScoreUpdate{Score: s.Score, Done: true}, nil
+	return domain.ScoreUpdate{Score: s.Score, Done: true, Counter: s.Counter}, nil
+}
+
+func (r *DynamoDBRepository) debugExpression(expr expression.Expression, meta domain.Metadata, entry string, leaderboard string) {
+	fmt.Println("<<<<<<<<<<<<<<<<<< DEBUG>>>>>>>>>>>>>>>>>>>>>")
+	ctx, cancel := context.WithTimeoutCause(context.Background(), 1*time.Second, errors.New("get configuration timeout"))
+	defer cancel()
+
+	keyCond := expression.KeyAnd(
+		expression.Key(hashKeyName).Equal(expression.Value(pkValue(entry))),
+		expression.Key(sortKeyName).Equal(expression.Value(skValue(leaderboard))),
+	)
+	exprq, err := expression.NewBuilder().WithKeyCondition(keyCond).Build()
+	if err != nil {
+		panic(err)
+	}
+	input := dynamodb.QueryInput{
+		TableName:                 aws.String(r.tableName),
+		ExpressionAttributeNames:  exprq.Names(),
+		ExpressionAttributeValues: exprq.Values(),
+		KeyConditionExpression:    exprq.KeyCondition(),
+	}
+
+	out, err := r.client.Query(ctx, &input)
+	if err != nil {
+		panic(err)
+	}
+	var it []map[string]interface{}
+	err = attributevalue.UnmarshalListOfMaps(out.Items, &it)
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("items:", it)
+
+	var v map[string]interface{}
+	attributevalue.UnmarshalMap(expr.Values(), &v)
+	fmt.Println()
+	fmt.Println()
+	if expr.Condition() != nil {
+
+		fmt.Println("condition:", *expr.Condition(), "names", expr.Names(), "values", v)
+	}
+	fmt.Println()
+	fmt.Println()
 }
 
 // LastWithMetadata ...
@@ -214,7 +286,12 @@ func (r *DynamoDBRepository) LastWithMetadata(entry string, leaderboard string, 
 		expression.Value(1),
 	)
 
-	r.log.Info("updating entry", "entry", entry, "leaderboard", leaderboard, "value", value, "function", "Last")
+	if meta != nil {
+		// let's deal with metadata if exists
+		update = r.updateWithMetadata(meta, update)
+		cb := r.builderFromMetadata(meta)
+		builder = builder.WithCondition(cb)
+	}
 
 	expr, err := builder.WithUpdate(update).Build()
 	if err != nil {
@@ -230,7 +307,8 @@ func (r *DynamoDBRepository) LastWithMetadata(entry string, leaderboard string, 
 			hashKeyName: &types.AttributeValueMemberS{Value: pkValue(entry)},
 			sortKeyName: &types.AttributeValueMemberS{Value: skValue(leaderboard)},
 		},
-		UpdateExpression: expr.Update(),
+		UpdateExpression:    expr.Update(),
+		ConditionExpression: expr.Condition(),
 	}
 
 	output, err := r.client.UpdateItem(context.Background(), &input)
@@ -243,7 +321,7 @@ func (r *DynamoDBRepository) LastWithMetadata(entry string, leaderboard string, 
 	if err != nil {
 		return domain.ScoreUpdate{}, fmt.Errorf("failed to process output: %w", err)
 	}
-	return domain.ScoreUpdate{Score: s.Score, Done: true}, nil
+	return domain.ScoreUpdate{Score: s.Score, Done: true, Counter: s.Counter}, nil
 }
 
 // GetConfig returns all existing leaderboards
@@ -297,7 +375,6 @@ func (r *DynamoDBRepository) ResetLock(leaderboard string, epoch int, duration t
 func (r *DynamoDBRepository) Update(name string, config domain.LeaderboardConfig) error {
 	ctx, cancel := context.WithTimeoutCause(context.Background(), 1*time.Second, errors.New("get configuration timeout"))
 	defer cancel()
-
 	skValue := fmt.Sprintf("%s%s", skConfigPrefix, name)
 
 	cfg, err := json.Marshal(config)
@@ -309,6 +386,7 @@ func (r *DynamoDBRepository) Update(name string, config domain.LeaderboardConfig
 		SK:     skValue,
 		Config: string(cfg),
 	}
+	fmt.Println("XXX", string(cfg), config)
 	item, err := attributevalue.MarshalMap(configItem)
 	if err != nil {
 		panic(fmt.Sprintf("failed to marshalMap: %v ", err))
@@ -352,4 +430,38 @@ func pkValue(value string) string {
 
 func skValue(value string) string {
 	return fmt.Sprintf("%s%s", skLeaderboardPrefix, value)
+}
+
+func (*DynamoDBRepository) updateWithMetadata(meta domain.Metadata, update expression.UpdateBuilder) expression.UpdateBuilder {
+	for k, v := range meta {
+		a := addMetadataPrefix(k)
+		update = update.Set(expression.Name(a), expression.Value(v))
+	}
+	return update
+}
+
+func (*DynamoDBRepository) builderFromMetadata(meta domain.Metadata) expression.ConditionBuilder {
+	var condBuilder expression.ConditionBuilder
+
+	for k, v := range meta {
+		a := addMetadataPrefix(k)
+		if condBuilder.IsSet() {
+			condBuilder = expression.And(condBuilder,
+				expression.Or(
+					expression.AttributeNotExists(expression.Name(a)),
+					expression.And(
+						expression.AttributeExists(expression.Name(a)),
+						expression.Equal(expression.Name(a), expression.Value(v)))))
+		} else {
+			condBuilder = expression.Or(
+				expression.AttributeNotExists(expression.Name(a)),
+				expression.And(
+					expression.AttributeExists(expression.Name(a)),
+					expression.Equal(expression.Name(a), expression.Value(v))))
+
+		}
+
+	}
+
+	return condBuilder
 }

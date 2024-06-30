@@ -31,7 +31,7 @@ func TestReportScore(t *testing.T) {
 	configProvider := defaultConfigProviderMock(ctrl, lbName)
 	nameEpoch, _, err := GetLeaderboardNameWithEpoch(lbName, domain.Hourly)
 	assert.NoError(t, err)
-	repo.EXPECT().Add(entryID, nameEpoch, value).Return(domain.ScoreUpdate{Score: value, Done: true}, nil)
+	repo.EXPECT().AddWithMetadata(entryID, nameEpoch, value, nil).Return(domain.ScoreUpdate{Score: value, Done: true}, nil)
 	scoreboard.EXPECT().AddScore(entryID, nameEpoch, value).Return(nil)
 	lbSrv := NewLeaderboardsService(repo, scoreboard, configProvider)
 
@@ -55,7 +55,7 @@ func TestReportScoreWithScoreboards(t *testing.T) {
 	configProvider := defaultConfigProviderMockWithScoreboards(ctrl, lbName)
 	_, _, err := GetLeaderboardNameWithEpoch(lbName, domain.Hourly)
 	assert.NoError(t, err)
-	repo.EXPECT().Add(entryID, gomock.Any(), value).Return(domain.ScoreUpdate{Score: value, Done: true}, nil).AnyTimes()
+	repo.EXPECT().AddWithMetadata(entryID, gomock.Any(), value, nil).Return(domain.ScoreUpdate{Score: value, Done: true}, nil).AnyTimes()
 	scoreboard.EXPECT().AddScore(entryID, gomock.Any(), value).Return(nil).AnyTimes()
 	lbSrv := NewLeaderboardsService(repo, scoreboard, configProvider)
 
@@ -86,6 +86,30 @@ func TestListScores(t *testing.T) {
 	assert.True(t, strings.Contains(v[0].Name, lbName))
 }
 
+func TestListScoresWithMeta(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	lbName := testutil.NewUnique(testutil.Name(t))
+	nameEpoch, _, err := GetLeaderboardNameWithEpoch(lbName, domain.Hourly)
+	assert.NoError(t, err)
+	repo := mocks.NewMockRepository(ctrl)
+	scoreboard := mocks.NewMockScoreboard(ctrl)
+	configProvider := defaultConfigProviderMock(ctrl, lbName)
+
+	scoreboard.EXPECT().Get(nameEpoch).Return([]domain.ScoreboardResult{}, nil)
+
+	lbSrv := NewLeaderboardsService(repo, scoreboard, configProvider)
+
+	v, _, err := lbSrv.ListScoresWithMetadata(lbName, domain.Metadata{
+		"country": "PT",
+		"league":  "gold",
+	})
+	assert.NoError(t, err)
+	assert.Len(t, v, 1)
+	assert.True(t, strings.Contains(v[0].Name, lbName))
+}
+
 func TestGetResults(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -102,6 +126,30 @@ func TestGetResults(t *testing.T) {
 	lbSrv := NewLeaderboardsService(repo, scoreboard, configProvider)
 
 	v, err := lbSrv.GetResults(lbName, epoch)
+	fmt.Println(v)
+	assert.NoError(t, err)
+	assert.Len(t, v, 1)
+	assert.True(t, strings.Contains(v[0].Name, lbName))
+}
+func TestGetResultsWithMetadata(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	lbName := testutil.NewUnique(testutil.Name(t))
+	nameEpoch, epoch, err := GetLeaderboardNameWithEpoch(lbName, domain.Hourly)
+	assert.NoError(t, err)
+	repo := mocks.NewMockRepository(ctrl)
+	scoreboard := mocks.NewMockScoreboard(ctrl)
+	configProvider := defaultConfigProviderMock(ctrl, lbName)
+
+	scoreboard.EXPECT().Get(nameEpoch).Return([]domain.ScoreboardResult{}, nil)
+
+	lbSrv := NewLeaderboardsService(repo, scoreboard, configProvider)
+
+	v, err := lbSrv.GetResultsWithMetadata(lbName, epoch, domain.Metadata{
+		"country": "PT",
+		"league":  "gold",
+	})
 	fmt.Println(v)
 	assert.NoError(t, err)
 	assert.Len(t, v, 1)

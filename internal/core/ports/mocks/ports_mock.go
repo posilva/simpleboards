@@ -293,6 +293,21 @@ func (mr *MockLeaderboardsServiceMockRecorder) GetResults(name, epoch any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetResults", reflect.TypeOf((*MockLeaderboardsService)(nil).GetResults), name, epoch)
 }
 
+// GetResultsWithMetadata mocks base method.
+func (m *MockLeaderboardsService) GetResultsWithMetadata(name string, epoch int64, meta domain.Metadata) ([]domain.LeaderboardScores, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetResultsWithMetadata", name, epoch, meta)
+	ret0, _ := ret[0].([]domain.LeaderboardScores)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetResultsWithMetadata indicates an expected call of GetResultsWithMetadata.
+func (mr *MockLeaderboardsServiceMockRecorder) GetResultsWithMetadata(name, epoch, meta any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetResultsWithMetadata", reflect.TypeOf((*MockLeaderboardsService)(nil).GetResultsWithMetadata), name, epoch, meta)
+}
+
 // ListScores mocks base method.
 func (m *MockLeaderboardsService) ListScores(name string) ([]domain.LeaderboardScores, int64, error) {
 	m.ctrl.T.Helper()
@@ -307,6 +322,22 @@ func (m *MockLeaderboardsService) ListScores(name string) ([]domain.LeaderboardS
 func (mr *MockLeaderboardsServiceMockRecorder) ListScores(name any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListScores", reflect.TypeOf((*MockLeaderboardsService)(nil).ListScores), name)
+}
+
+// ListScoresWithMetadata mocks base method.
+func (m *MockLeaderboardsService) ListScoresWithMetadata(name string, meta domain.Metadata) ([]domain.LeaderboardScores, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListScoresWithMetadata", name, meta)
+	ret0, _ := ret[0].([]domain.LeaderboardScores)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ListScoresWithMetadata indicates an expected call of ListScoresWithMetadata.
+func (mr *MockLeaderboardsServiceMockRecorder) ListScoresWithMetadata(name, meta any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListScoresWithMetadata", reflect.TypeOf((*MockLeaderboardsService)(nil).ListScoresWithMetadata), name, meta)
 }
 
 // ReportScore mocks base method.

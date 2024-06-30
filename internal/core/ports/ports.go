@@ -31,11 +31,13 @@ type LeaderboardsService interface {
 	ReportScore(entryID string, name string, value float64) (domain.ReportScoreOutput, error)
 	ReportScoreWithMetadata(entryID string, name string, value float64, meta domain.Metadata) (domain.ReportScoreOutput, error)
 	ListScores(name string) ([]domain.LeaderboardScores, int64, error)
+	ListScoresWithMetadata(name string, meta domain.Metadata) ([]domain.LeaderboardScores, int64, error)
 	// TODO: we may have a dedicated data type to return in this call
 	GetResults(name string, epoch int64) ([]domain.LeaderboardScores, error)
+	GetResultsWithMetadata(name string, epoch int64, meta domain.Metadata) ([]domain.LeaderboardScores, error)
 }
 
-// ScoreboardService ...
+// Scoreboard ...
 type Scoreboard interface {
 	Get(name string) ([]domain.ScoreboardResult, error)
 	GetTopN(name string, n int64) ([]domain.ScoreboardResult, error)

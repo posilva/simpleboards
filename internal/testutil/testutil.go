@@ -2,6 +2,7 @@
 package testutil
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/posilva/simpleboards/internal/adapters/output/logging"
@@ -26,12 +27,12 @@ func Name(t *testing.T) string {
 
 // NewID returns an ID for tests using kuid package
 func NewID() string {
-	return uuid.New().String()
+	return strings.ToLower(uuid.New().String())
 }
 
 // NewUnique appends to a string a UUID to allow for uniqueness
 func NewUnique(prefix string) string {
-	return prefix + NewID()
+	return strings.ToLower(prefix + NewID())
 }
 
 // NewLeaderboardConfig creates a new Leaderboard configuration struct
@@ -53,6 +54,33 @@ func NewLeaderboardConfig(name string, from uint64, to uint64, action string) do
 }
 
 func NewLeaderboardConfigWithScoreboards(name string, reset domain.LeaderboardResetType, function domain.LeaderboardFunctionType) domain.LeaderboardConfig {
+	return domain.LeaderboardConfig{
+		Name:     name,
+		Function: function,
+		Reset:    reset,
+		PrizeTable: domain.LeaderboardPrizeTable{
+			Table: []domain.LeaderboardPrize{
+				{
+					RankFrom: 1,
+					RankTo:   1,
+					Action:   "reward 1",
+				},
+			},
+		},
+		Scoreboards: []domain.LeaderboardScoreBoardConfig{
+			{
+				Type:  domain.League,
+				Field: "league",
+			},
+			{
+				Type:  domain.Country,
+				Field: "country",
+			},
+		},
+	}
+
+}
+func NewLeaderboardConfigWithFunctionResetWithScoreboards(name string, reset domain.LeaderboardResetType, function domain.LeaderboardFunctionType) domain.LeaderboardConfig {
 	return domain.LeaderboardConfig{
 		Name:     name,
 		Function: function,
