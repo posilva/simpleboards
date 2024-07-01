@@ -40,7 +40,9 @@ func NewLeaderboardConfig(name string, from uint64, to uint64, action string) do
 	return domain.LeaderboardConfig{
 		Name:     name,
 		Function: domain.Sum,
-		Reset:    domain.Hourly,
+		ResetExpression: domain.ResetExpression{
+			Type: domain.Hourly,
+		},
 		PrizeTable: domain.LeaderboardPrizeTable{
 			Table: []domain.LeaderboardPrize{
 				{
@@ -53,11 +55,13 @@ func NewLeaderboardConfig(name string, from uint64, to uint64, action string) do
 	}
 }
 
-func NewLeaderboardConfigWithScoreboards(name string, reset domain.LeaderboardResetType, function domain.LeaderboardFunctionType) domain.LeaderboardConfig {
+func NewLeaderboardConfigWithScoreboards(name string, resetType domain.LeaderboardResetType, function domain.LeaderboardFunctionType) domain.LeaderboardConfig {
 	return domain.LeaderboardConfig{
 		Name:     name,
 		Function: function,
-		Reset:    reset,
+		ResetExpression: domain.ResetExpression{
+			Type: resetType,
+		},
 		PrizeTable: domain.LeaderboardPrizeTable{
 			Table: []domain.LeaderboardPrize{
 				{
@@ -80,11 +84,13 @@ func NewLeaderboardConfigWithScoreboards(name string, reset domain.LeaderboardRe
 	}
 
 }
-func NewLeaderboardConfigWithFunctionResetWithScoreboards(name string, reset domain.LeaderboardResetType, function domain.LeaderboardFunctionType) domain.LeaderboardConfig {
+func NewLeaderboardConfigWithFunctionResetWithScoreboards(name string, resetType domain.LeaderboardResetType, function domain.LeaderboardFunctionType) domain.LeaderboardConfig {
 	return domain.LeaderboardConfig{
 		Name:     name,
 		Function: function,
-		Reset:    reset,
+		ResetExpression: domain.ResetExpression{
+			Type: resetType,
+		},
 		PrizeTable: domain.LeaderboardPrizeTable{
 			Table: []domain.LeaderboardPrize{
 				{
@@ -108,11 +114,13 @@ func NewLeaderboardConfigWithFunctionResetWithScoreboards(name string, reset dom
 
 }
 
-func NewLeaderboardConfigWithFunctionReset(name string, reset domain.LeaderboardResetType, function domain.LeaderboardFunctionType) domain.LeaderboardConfig {
+func NewLeaderboardConfigWithFunctionReset(name string, resetType domain.LeaderboardResetType, function domain.LeaderboardFunctionType) domain.LeaderboardConfig {
 	return domain.LeaderboardConfig{
 		Name:     name,
 		Function: function,
-		Reset:    reset,
+		ResetExpression: domain.ResetExpression{
+			Type: resetType,
+		},
 		PrizeTable: domain.LeaderboardPrizeTable{
 			Table: []domain.LeaderboardPrize{
 				{

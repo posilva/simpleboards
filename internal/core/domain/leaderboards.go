@@ -25,6 +25,7 @@ const (
 	Daily
 	Weekly
 	Monthly
+	Custom
 )
 
 type LeaderboardPrizeTable struct {
@@ -54,13 +55,18 @@ type LeaderboardScoreBoardConfig struct {
 	Field string         `json:"field"`
 }
 
+type ResetExpression struct {
+	Type           LeaderboardResetType `json:"reset_type"`
+	CronExpression string               `json:"cron, omitempty"`
+}
+
 // LeaderboardConfig holds information of a Leaderboard instance
 type LeaderboardConfig struct {
-	Name        string                        `json:"name"`
-	Function    LeaderboardFunctionType       `json:"function"`
-	Reset       LeaderboardResetType          `json:"reset_type"`
-	PrizeTable  LeaderboardPrizeTable         `json:"prizes_table"`
-	Scoreboards []LeaderboardScoreBoardConfig `json:"scoreboards"`
+	Name            string                        `json:"name"`
+	Function        LeaderboardFunctionType       `json:"function"`
+	ResetExpression ResetExpression               `json:"reset`
+	PrizeTable      LeaderboardPrizeTable         `json:"prizes_table"`
+	Scoreboards     []LeaderboardScoreBoardConfig `json:"scoreboards"`
 }
 
 // TODO: add a field to represent the metadata to show in the UI

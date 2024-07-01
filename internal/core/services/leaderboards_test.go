@@ -29,7 +29,7 @@ func TestReportScore(t *testing.T) {
 	scoreboard := mocks.NewMockScoreboard(ctrl)
 
 	configProvider := defaultConfigProviderMock(ctrl, lbName)
-	nameEpoch, _, err := GetLeaderboardNameWithEpoch(lbName, domain.Hourly)
+	nameEpoch, _, err := GetLeaderboardNameWithEpoch(lbName, domain.ResetExpression{Type: domain.Hourly})
 	assert.NoError(t, err)
 	repo.EXPECT().AddWithMetadata(entryID, nameEpoch, value, nil).Return(domain.ScoreUpdate{Score: value, Done: true}, nil)
 	scoreboard.EXPECT().AddScore(entryID, nameEpoch, value).Return(nil)
@@ -53,7 +53,7 @@ func TestReportScoreWithScoreboards(t *testing.T) {
 	scoreboard := mocks.NewMockScoreboard(ctrl)
 
 	configProvider := defaultConfigProviderMockWithScoreboards(ctrl, lbName)
-	_, _, err := GetLeaderboardNameWithEpoch(lbName, domain.Hourly)
+	_, _, err := GetLeaderboardNameWithEpoch(lbName, domain.ResetExpression{Type: domain.Hourly})
 	assert.NoError(t, err)
 	repo.EXPECT().AddWithMetadata(entryID, gomock.Any(), value, nil).Return(domain.ScoreUpdate{Score: value, Done: true}, nil).AnyTimes()
 	scoreboard.EXPECT().AddScore(entryID, gomock.Any(), value).Return(nil).AnyTimes()
@@ -70,7 +70,7 @@ func TestListScores(t *testing.T) {
 	defer ctrl.Finish()
 
 	lbName := testutil.NewUnique(testutil.Name(t))
-	nameEpoch, _, err := GetLeaderboardNameWithEpoch(lbName, domain.Hourly)
+	nameEpoch, _, err := GetLeaderboardNameWithEpoch(lbName, domain.ResetExpression{Type: domain.Hourly})
 	assert.NoError(t, err)
 	repo := mocks.NewMockRepository(ctrl)
 	scoreboard := mocks.NewMockScoreboard(ctrl)
@@ -91,7 +91,7 @@ func TestListScoresWithMeta(t *testing.T) {
 	defer ctrl.Finish()
 
 	lbName := testutil.NewUnique(testutil.Name(t))
-	nameEpoch, _, err := GetLeaderboardNameWithEpoch(lbName, domain.Hourly)
+	nameEpoch, _, err := GetLeaderboardNameWithEpoch(lbName, domain.ResetExpression{Type: domain.Hourly})
 	assert.NoError(t, err)
 	repo := mocks.NewMockRepository(ctrl)
 	scoreboard := mocks.NewMockScoreboard(ctrl)
@@ -115,7 +115,7 @@ func TestGetResults(t *testing.T) {
 	defer ctrl.Finish()
 
 	lbName := testutil.NewUnique(testutil.Name(t))
-	nameEpoch, epoch, err := GetLeaderboardNameWithEpoch(lbName, domain.Hourly)
+	nameEpoch, epoch, err := GetLeaderboardNameWithEpoch(lbName, domain.ResetExpression{Type: domain.Hourly})
 	assert.NoError(t, err)
 	repo := mocks.NewMockRepository(ctrl)
 	scoreboard := mocks.NewMockScoreboard(ctrl)
@@ -136,7 +136,7 @@ func TestGetResultsWithMetadata(t *testing.T) {
 	defer ctrl.Finish()
 
 	lbName := testutil.NewUnique(testutil.Name(t))
-	nameEpoch, epoch, err := GetLeaderboardNameWithEpoch(lbName, domain.Hourly)
+	nameEpoch, epoch, err := GetLeaderboardNameWithEpoch(lbName, domain.ResetExpression{Type: domain.Hourly})
 	assert.NoError(t, err)
 	repo := mocks.NewMockRepository(ctrl)
 	scoreboard := mocks.NewMockScoreboard(ctrl)
@@ -161,7 +161,7 @@ func TestGetResultsWithScoreboards(t *testing.T) {
 	defer ctrl.Finish()
 
 	lbName := testutil.NewUnique(testutil.Name(t))
-	_, epoch, err := GetLeaderboardNameWithEpoch(lbName, domain.Hourly)
+	_, epoch, err := GetLeaderboardNameWithEpoch(lbName, domain.ResetExpression{Type: domain.Hourly})
 	assert.NoError(t, err)
 	repo := mocks.NewMockRepository(ctrl)
 	scoreboard := mocks.NewMockScoreboard(ctrl)
