@@ -10,9 +10,13 @@ type LeaderboardsConfigMap = map[string]LeaderboardConfig
 type LeaderboardFunctionType int
 
 const (
+	// Last function that saves always the last value stored
 	Last LeaderboardFunctionType = iota
+	// Max function that saves always the max value stored
 	Max
+	// Min function that saves always the min value stored
 	Min
+	// Sum function that accumulated value stored
 	Sum
 )
 
@@ -67,6 +71,7 @@ type LeaderboardConfig struct {
 	ResetExpression ResetExpression               `json:"reset`
 	PrizeTable      LeaderboardPrizeTable         `json:"prizes_table"`
 	Scoreboards     []LeaderboardScoreBoardConfig `json:"scoreboards"`
+	CronExpression  CronExpression                `json:"-"`
 }
 
 // TODO: add a field to represent the metadata to show in the UI

@@ -37,12 +37,14 @@ func NewUnique(prefix string) string {
 
 // NewLeaderboardConfig creates a new Leaderboard configuration struct
 func NewLeaderboardConfig(name string, from uint64, to uint64, action string) domain.LeaderboardConfig {
+	r := domain.ResetExpression{
+		Type: domain.Hourly,
+	}
+	ce, _ := domain.NewCronExpression(r)
 	return domain.LeaderboardConfig{
-		Name:     name,
-		Function: domain.Sum,
-		ResetExpression: domain.ResetExpression{
-			Type: domain.Hourly,
-		},
+		Name:            name,
+		Function:        domain.Sum,
+		ResetExpression: r,
 		PrizeTable: domain.LeaderboardPrizeTable{
 			Table: []domain.LeaderboardPrize{
 				{
@@ -52,16 +54,19 @@ func NewLeaderboardConfig(name string, from uint64, to uint64, action string) do
 				},
 			},
 		},
+		CronExpression: ce,
 	}
 }
 
 func NewLeaderboardConfigWithScoreboards(name string, resetType domain.LeaderboardResetType, function domain.LeaderboardFunctionType) domain.LeaderboardConfig {
+	r := domain.ResetExpression{
+		Type: resetType,
+	}
+	ce, _ := domain.NewCronExpression(r)
 	return domain.LeaderboardConfig{
-		Name:     name,
-		Function: function,
-		ResetExpression: domain.ResetExpression{
-			Type: resetType,
-		},
+		Name:            name,
+		Function:        function,
+		ResetExpression: r,
 		PrizeTable: domain.LeaderboardPrizeTable{
 			Table: []domain.LeaderboardPrize{
 				{
@@ -81,6 +86,7 @@ func NewLeaderboardConfigWithScoreboards(name string, resetType domain.Leaderboa
 				Field: "country",
 			},
 		},
+		CronExpression: ce,
 	}
 
 }

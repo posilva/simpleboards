@@ -56,7 +56,7 @@ func (s *LeaderboardsService) ReportScoreWithMetadata(entryID string, name strin
 		return domain.ReportScoreOutput{}, fmt.Errorf("failed to fetch configs: %v", err)
 	}
 
-	leaderboard, epoch, err := GetLeaderboardNameWithEpoch(name, config.ResetExpression)
+	leaderboard, epoch, err := GetLeaderboardNameWithEpoch(name, config.CronExpression)
 
 	if err != nil {
 		return domain.ReportScoreOutput{}, fmt.Errorf("failed to generate name from configs: %v", err)
@@ -130,7 +130,7 @@ func (s *LeaderboardsService) ListScoresWithMetadata(name string, meta domain.Me
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to fetch configs: %v", err)
 	}
-	leaderboard, epoch, err := GetLeaderboardNameWithEpoch(name, config.ResetExpression)
+	leaderboard, epoch, err := GetLeaderboardNameWithEpoch(name, config.CronExpression)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to generate name from configs: %v", err)
 	}
@@ -237,33 +237,11 @@ func (s *LeaderboardsService) GetResultsWithMetadata(name string, epoch int64, m
 	return allResults, nil
 }
 
-func GetLeaderboardNameWithEpoch(name string, reset domain.ResetExpression) (string, int64, error) {
-	epoch, err := CalculateEpoch(reset, time.Now().Unix())
-	if err != nil {
-		return "", 0, err
-	}
+func GetLeaderboardNameWithEpoch(name string, reset domain.CronExpression) (string, int64, error) {
+	epoch := reset.GetEpochFromReferenceUnixTimestamp(time.Now().Unix())
 	return strings.ToLower(getNameWithEpoch(name, epoch)), epoch, nil
 }
 
 func getNameWithEpoch(name string, epoch int64) string {
 	return strings.ToLower(fmt.Sprintf("%s::%d", name, epoch))
-}
-
-func CalculateEpoch(reset domain.ResetExpression, posixTs int64) (int64, error) {
-	hour := posixTs / 60 / 60
-	day := hour / 24
-	week := day / 7
-	month := day / 30
-	resetType := reset.Type
-	switch resetType {
-	case domain.Hourly:
-		return hour, nil
-	case domain.Daily:
-		return day, nil
-	case domain.Weekly:
-		return week, nil
-	case domain.Monthly:
-		return month, nil
-	}
-	return 0, fmt.Errorf("unknown reset type: %v", resetType)
 }

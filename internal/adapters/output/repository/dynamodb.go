@@ -231,7 +231,6 @@ func (r *DynamoDBRepository) MinWithMetadata(entry string, leaderboard string, v
 }
 
 func (r *DynamoDBRepository) debugExpression(expr expression.Expression, meta domain.Metadata, entry string, leaderboard string) {
-	fmt.Println("<<<<<<<<<<<<<<<<<< DEBUG>>>>>>>>>>>>>>>>>>>>>")
 	ctx, cancel := context.WithTimeoutCause(context.Background(), 1*time.Second, errors.New("get configuration timeout"))
 	defer cancel()
 

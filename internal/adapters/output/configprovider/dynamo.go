@@ -45,6 +45,17 @@ func (cp *DynamoConfigProvider[T]) Refresh() {
 		cp.logger.Error("failed to get configuration: %v", err)
 		return
 	}
+
+	for name, config := range cfgMap {
+		ce, err := domain.NewCronExpression(config.ResetExpression)
+		if err != nil {
+			cp.logger.Error("failed to update cron expression (%v) in configuration '%v': %v", config.ResetExpression, name, err)
+			return
+		}
+		config.CronExpression = ce
+		cfgMap[name] = config
+	}
+
 	cp.currentConfig = cfgMap
 }
 
