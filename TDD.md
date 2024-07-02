@@ -53,18 +53,9 @@ Queries:
 - Return all the leaderboards of an user
     - PK= USER#<user_id>, SK=beginwith(LBRD#)
 
-
-
-
 Leaderboards Config
 PK: LBRD#CONFIG
 SK: LBRD#NAME#<name>
-
-
-
-
-
-
 
 ### Random notes
 

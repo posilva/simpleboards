@@ -32,13 +32,14 @@ import (
 )
 
 var (
-	uniqueTestID      = uuid.NewString()
-	defaultLbName     = "integration_lb_tests::" + uniqueTestID
-	defaultLbNameSum  = defaultLbName + "::Sum"
-	defaultLbNameMax  = defaultLbName + "::Max"
-	defaultLbNameMin  = defaultLbName + "::Min"
-	defaultLbNameLast = defaultLbName + "::Last"
-	metadataDefault   = map[string]string{
+	uniqueTestID             = uuid.NewString()
+	defaultLbName            = "integration_lb_tests::" + uniqueTestID
+	defaultLbNameSumMultiple = defaultLbName + "::Sum::multiple"
+	defaultLbNameSum         = defaultLbName + "::Sum"
+	defaultLbNameMax         = defaultLbName + "::Max"
+	defaultLbNameMin         = defaultLbName + "::Min"
+	defaultLbNameLast        = defaultLbName + "::Last"
+	metadataDefault          = map[string]string{
 		"country": "PT",
 		"league":  "gold",
 	}
@@ -86,6 +87,7 @@ func setup(suite *BaseTestSuite) {
 	configLeaderboard(defaultLbName)
 	f := domain.Sum
 	r := domain.Hourly
+	configLeaderboardFuncReset(defaultLbNameSumMultiple, f, r)
 	configLeaderboardFuncReset(defaultLbNameSum, f, r)
 	f = domain.Max
 	configLeaderboardFuncReset(defaultLbNameMax, f, r)

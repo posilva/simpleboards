@@ -186,10 +186,67 @@ func (suite *E2ETestSuite) TestSingleEntryLastMultipleScoreTest() {
 	resp, err = reportScore(lbName, entryID, 5)
 	suite.NoError(err)
 	suite.Equal(float64(5), resp.Score)
-	_, err = listScores(lbName)
+	r, err := listScores(lbName)
+	fmt.Println(r)
+
 	suite.NoError(err)
 }
 
+func (suite *E2ETestSuite) TestFullSizeLeaderboards() {
+	country := "PT"
+	league := "gold"
+	lbName := defaultLbNameSumMultiple
+	for i := 0; i < 100; i++ {
+		entryID := testutil.NewID()
+		if i%2 == 0 {
+			country = "PT"
+			league = "silver"
+		} else {
+			country = "UK"
+			league = "gold"
+		}
+		score := float64((i * 10) + 10)
+		_, err := reportScoreWithMetadataCountryLeage(lbName, entryID, score, country, league)
+		suite.NoError(err)
+	}
+	list, err := listScoresWithMetadata(lbName, metadataDefault)
+	suite.NoError(err)
+	suite.Len(list.Scores, 3)
+	suite.Len(list.Scores[0].Scores, 51)
+	suite.Len(list.Scores[1].Scores, 50)
+	suite.Len(list.Scores[2].Scores, 50)
+	list, err = listScoresWithMetadata(lbName, map[string]string{
+		"country": "UK",
+		"league":  "silver",
+	})
+	suite.NoError(err)
+	suite.Len(list.Scores, 3)
+	suite.Len(list.Scores[0].Scores, 51)
+	suite.Len(list.Scores[1].Scores, 50)
+	suite.Len(list.Scores[2].Scores, 50)
+	list, err = listScoresWithMetadata(lbName, map[string]string{
+		"country": "PT",
+		"league":  "silver",
+	})
+	suite.NoError(err)
+	suite.Len(list.Scores, 3)
+	suite.Len(list.Scores[0].Scores, 51)
+	suite.Len(list.Scores[1].Scores, 50)
+	suite.Len(list.Scores[2].Scores, 50)
+	list, err = listScoresWithMetadata(lbName, map[string]string{
+		"country": "PT",
+		"league":  "gold",
+	})
+	suite.NoError(err)
+	suite.Len(list.Scores, 3)
+	suite.Len(list.Scores[0].Scores, 51)
+	suite.Len(list.Scores[1].Scores, 50)
+	suite.Len(list.Scores[2].Scores, 50)
+
+	for _, v := range list.Scores[0].Scores {
+		fmt.Println(v)
+	}
+}
 func (suite *E2ETestSuite) TestMultipleSumEntry() {
 	entryID := testutil.NewID()
 	entryID2 := testutil.NewID()
