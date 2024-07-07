@@ -11,10 +11,10 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /simpleboards cmd/simpleboards/main.go
 
 # Run the tests in the container
 FROM build-stage AS run-test-stage
-RUN go test -v ./...
+RUN go test -v ./internal/...
 
 # Deploy the application binary into a lean image
-FROM alpine:3.18 AS build-release-stage
+FROM alpine:3.19 AS build-release-stage
 
 WORKDIR /
 
