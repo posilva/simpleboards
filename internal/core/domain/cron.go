@@ -46,8 +46,10 @@ func NewCronExpression(reset ResetExpression) (CronExpression, error) {
 	second := expr.Next(first)
 	intervalSecs := second.Sub(first).Seconds()
 
-	lec := calculateCurrentEpochSince(expr, initUnix)
-
+	lec, err := calculateCurrentEpochSince(expr, initUnix)
+	if err != nil {
+		return CronExpression{}, fmt.Errorf("failed to calculate epoch: %w", err)
+	}
 	ce := CronExpression{
 		expr:            expr,
 		first:           first,
@@ -58,22 +60,34 @@ func NewCronExpression(reset ResetExpression) (CronExpression, error) {
 	return ce, nil
 }
 
-func calculateCurrentEpochSince(expr *cronexpr.Expression, since time.Time) epochCache {
+func calculateCurrentEpochSince(expr *cronexpr.Expression, since time.Time) (epochCache, error) {
 	now := time.Now().UTC()
 
-	next := since
+	ec, err := calculateEpochBetween(expr, since, now)
+	if err != nil {
+		return epochCache{}, err
+	}
+	return ec, nil
+}
+
+func calculateEpochBetween(expr *cronexpr.Expression, from time.Time, to time.Time) (epochCache, error) {
+	if !from.Before(to) {
+		return epochCache{}, fmt.Errorf("'from' time needs to be before 'to' time")
+	}
+
+	next := from
 	previous := next
 	var epoch int64 = 1
-	for next.Unix() < now.Unix() {
+	for next.Unix() < to.Unix() {
 		previous = next
 		next = expr.Next(next)
 		epoch++
 	}
-	lec := epochCache{
+
+	return epochCache{
 		epoch:     epoch,
 		timestamp: previous,
-	}
-	return lec
+	}, nil
 }
 
 // GetCurrentEpoch returns the epoch based in the current Timestamp
@@ -83,23 +97,42 @@ func (e *CronExpression) GetCurrentEpoch() int64 {
 	return e.GetEpochFromReferenceUnixTimestamp(now)
 }
 
-// GetEpochFromReferenceUnixTimestamp calculates the epoch based on a cron expression and a ref unix timestamp
-func (e *CronExpression) GetEpochFromReferenceUnixTimestamp(ref int64) int64 {
+func (e *CronExpression) GetEpochBetweenUnixTimestamps(from int64, to int64) int64 {
 	epoch := e.lastEpochCached.epoch
 	since := e.lastEpochCached.timestamp
 
-	fmt.Println(epoch, since)
-
-	if ref >= e.lastEpochCached.timestamp.Unix() {
-		ec := calculateCurrentEpochSince(e.expr, since)
+	if from >= e.lastEpochCached.timestamp.Unix() {
+		// TODO: I need to review the error condition handling, not serious because is a private function
+		ec, _ := calculateEpochBetween(e.expr, since, time.Unix(to, 0))
 		epoch = epoch + ec.epoch
 		since = ec.timestamp
 		e.lastEpochCached = epochCache{epoch: epoch, timestamp: since}
 	} else {
 		initUnix := time.Unix(0, 0).UTC()
-		ec := calculateCurrentEpochSince(e.expr, initUnix)
+		// TODO: I need to review the error condition handling, not serious because is a private function
+		ec, _ := calculateEpochBetween(e.expr, initUnix, time.Unix(to, 0))
 		epoch = ec.epoch
+	}
+
+	return epoch
+}
+
+// GetEpochFromReferenceUnixTimestamp calculates the epoch based on a cron expression and a ref unix timestamp
+func (e *CronExpression) GetEpochFromReferenceUnixTimestamp(ref int64) int64 {
+	epoch := e.lastEpochCached.epoch
+	since := e.lastEpochCached.timestamp
+
+	if ref >= e.lastEpochCached.timestamp.Unix() {
+		// TODO: I need to review the error condition handling, not serious because is a private function
+		ec, _ := calculateCurrentEpochSince(e.expr, since)
+		epoch = epoch + ec.epoch
 		since = ec.timestamp
+		e.lastEpochCached = epochCache{epoch: epoch, timestamp: since}
+	} else {
+		initUnix := time.Unix(0, 0).UTC()
+		// TODO: I need to review the error condition handling, not serious because is a private function
+		ec, _ := calculateCurrentEpochSince(e.expr, initUnix)
+		epoch = ec.epoch
 	}
 
 	return epoch

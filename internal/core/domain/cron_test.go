@@ -1,8 +1,6 @@
 package domain
 
 import (
-	"fmt"
-	"math"
 	"testing"
 	"time"
 
@@ -12,7 +10,10 @@ import (
 )
 
 // fix the reference timestamp
-const refGlobal int64 = 1719848640
+const (
+	refGlobal int64 = 1719848640
+	toGlobal  int64 = 1735948809
+)
 
 func TestParseCustom(t *testing.T) {
 	e := "00 6 * * 1"
@@ -21,8 +22,10 @@ func TestParseCustom(t *testing.T) {
 		Type:           Custom,
 		CronExpression: e,
 	})
+
 	assert.NoError(t, err)
-	assert.Equal(t, int64(2847), ce.GetEpochFromReferenceUnixTimestamp(ref))
+	assert.NoError(t, err)
+	assert.Equal(t, int64(2872), ce.GetEpochBetweenUnixTimestamps(ref, toGlobal))
 }
 
 func TestParseHourly(t *testing.T) {
@@ -32,7 +35,7 @@ func TestParseHourly(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	assert.Equal(t, int64(477930), ce.GetEpochFromReferenceUnixTimestamp(ref))
+	assert.Equal(t, int64(482210), ce.GetEpochBetweenUnixTimestamps(ref, toGlobal))
 }
 
 func TestParseDaily(t *testing.T) {
@@ -42,8 +45,9 @@ func TestParseDaily(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	assert.Equal(t, int64(19915), ce.GetEpochFromReferenceUnixTimestamp(ref))
+	assert.Equal(t, int64(20094), ce.GetEpochBetweenUnixTimestamps(ref, toGlobal))
 }
+
 func TestParseWeekly(t *testing.T) {
 	ref := refGlobal
 	ce, err := NewCronExpression(ResetExpression{
@@ -51,7 +55,7 @@ func TestParseWeekly(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	assert.Equal(t, int64(2847), ce.GetEpochFromReferenceUnixTimestamp(ref))
+	assert.Equal(t, int64(2872), ce.GetEpochBetweenUnixTimestamps(ref, toGlobal))
 }
 
 func TestGetNexFromRefUTC(t *testing.T) {
@@ -63,6 +67,7 @@ func TestGetNexFromRefUTC(t *testing.T) {
 	assert.Equal(t, time.Time(time.Date(2024, time.July, 1, 16, 0, 0, 0, time.UTC)),
 		ce.GetNexFromRefUTC(time.Unix(ref, 0)))
 }
+
 func TestGetNexTimestampFromRefUTC(t *testing.T) {
 	ref := refGlobal
 	ce, err := NewCronExpression(ResetExpression{
@@ -80,27 +85,23 @@ func TestEpochByRef(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	epoch := ce.GetEpochFromReferenceUnixTimestamp(ref)
-	assert.Equal(t, int64(477930), epoch)
-
+	epoch := ce.GetEpochBetweenUnixTimestamps(ref, toGlobal)
+	assert.Equal(t, int64(482210), epoch)
 }
 
 func TestEpochByRefBeforeCached(t *testing.T) {
 	ref := refGlobal
 	before := time.Unix(ref, 0).Add(-60 * time.Minute).UTC().Unix()
-	fmt.Println(before, ref, time.Now().UTC())
 	ce, err := NewCronExpression(ResetExpression{
 		Type: Hourly,
 	})
 	assert.NoError(t, err)
 
-	epoch := ce.GetEpochFromReferenceUnixTimestamp(before)
-	assert.Equal(t, int64(477930), epoch)
-
+	epoch := ce.GetEpochBetweenUnixTimestamps(before, toGlobal)
+	assert.Equal(t, int64(482210), epoch)
 }
 
 func BenchmarkPrimeNumbers(b *testing.B) {
-
 	for i := 0; i < b.N; i++ {
 		e := "0 0 1 * *" // every 1st of month
 
@@ -110,7 +111,7 @@ func BenchmarkPrimeNumbers(b *testing.B) {
 		first := cronexpr.MustParse(e).Next(initUnix)
 		second := cronexpr.MustParse(e).Next(first)
 		intervalSecs := second.Sub(first).Seconds()
-		_ = int64(math.Floor(float64((now-first.Unix())/int64(intervalSecs)))) + 1
+		_ = int64(float64((now-first.Unix())/int64(intervalSecs))) + 1
 
 	}
 }

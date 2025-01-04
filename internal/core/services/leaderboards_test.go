@@ -1,7 +1,6 @@
 package services
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
@@ -143,11 +142,11 @@ func TestGetResults(t *testing.T) {
 	lbSrv := NewLeaderboardsService(repo, scoreboard, configProvider)
 
 	v, err := lbSrv.GetResults(lbName, epoch)
-	fmt.Println(v)
 	assert.NoError(t, err)
 	assert.Len(t, v, 1)
 	assert.True(t, strings.Contains(v[0].Name, lbName))
 }
+
 func TestGetResultsWithMetadata(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -170,7 +169,6 @@ func TestGetResultsWithMetadata(t *testing.T) {
 		"country": "PT",
 		"league":  "gold",
 	})
-	fmt.Println(v)
 	assert.NoError(t, err)
 	assert.Len(t, v, 1)
 	assert.True(t, strings.Contains(v[0].Name, lbName))
