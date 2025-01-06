@@ -2,18 +2,23 @@ package domain
 
 import (
 	"fmt"
-	"math"
 	"time"
 
 	"github.com/gorhill/cronexpr"
 )
 
+type epochCache struct {
+	epoch     int64
+	timestamp time.Time
+}
+
 // CronExpression data
 type CronExpression struct {
-	expr     *cronexpr.Expression
-	first    time.Time
-	second   time.Time
-	interval int64
+	expr            *cronexpr.Expression
+	first           time.Time
+	second          time.Time
+	interval        int64
+	lastEpochCached epochCache
 }
 
 // NewCronExpression creates a cron expression from a reset expression
@@ -32,27 +37,105 @@ func NewCronExpression(reset ResetExpression) (CronExpression, error) {
 		e = reset.CronExpression
 	}
 
-	initUnix := time.Unix(0, 0).UTC()
 	expr, err := cronexpr.Parse(e)
 	if err != nil {
 		return CronExpression{}, fmt.Errorf("failed to parse cron expression '%v': %v", e, err)
 	}
-
+	initUnix := time.Unix(0, 0).UTC()
 	first := expr.Next(initUnix)
 	second := expr.Next(first)
 	intervalSecs := second.Sub(first).Seconds()
 
-	return CronExpression{
-		expr:     expr,
-		first:    first,
-		second:   second,
-		interval: int64(intervalSecs),
+	lec, err := calculateCurrentEpochSince(expr, initUnix)
+	if err != nil {
+		return CronExpression{}, fmt.Errorf("failed to calculate epoch: %w", err)
+	}
+	ce := CronExpression{
+		expr:            expr,
+		first:           first,
+		second:          second,
+		interval:        int64(intervalSecs),
+		lastEpochCached: lec,
+	}
+	return ce, nil
+}
+
+func calculateCurrentEpochSince(expr *cronexpr.Expression, since time.Time) (epochCache, error) {
+	now := time.Now().UTC()
+
+	ec, err := calculateEpochBetween(expr, since, now)
+	if err != nil {
+		return epochCache{}, err
+	}
+	return ec, nil
+}
+
+func calculateEpochBetween(expr *cronexpr.Expression, from time.Time, to time.Time) (epochCache, error) {
+	if !from.Before(to) {
+		return epochCache{}, fmt.Errorf("'from' time needs to be before 'to' time")
+	}
+
+	next := from
+	previous := next
+	var epoch int64 = 1
+	for next.Unix() < to.Unix() {
+		previous = next
+		next = expr.Next(next)
+		epoch++
+	}
+
+	return epochCache{
+		epoch:     epoch,
+		timestamp: previous,
 	}, nil
+}
+
+// GetCurrentEpoch returns the epoch based in the current Timestamp
+func (e *CronExpression) GetCurrentEpoch() int64 {
+	now := time.Now().UTC().Unix()
+
+	return e.GetEpochFromReferenceUnixTimestamp(now)
+}
+
+func (e *CronExpression) GetEpochBetweenUnixTimestamps(from int64, to int64) int64 {
+	epoch := e.lastEpochCached.epoch
+	since := e.lastEpochCached.timestamp
+
+	if from >= e.lastEpochCached.timestamp.Unix() {
+		// TODO: I need to review the error condition handling, not serious because is a private function
+		ec, _ := calculateEpochBetween(e.expr, since, time.Unix(to, 0))
+		epoch = epoch + ec.epoch
+		since = ec.timestamp
+		e.lastEpochCached = epochCache{epoch: epoch, timestamp: since}
+	} else {
+		initUnix := time.Unix(0, 0).UTC()
+		// TODO: I need to review the error condition handling, not serious because is a private function
+		ec, _ := calculateEpochBetween(e.expr, initUnix, time.Unix(to, 0))
+		epoch = ec.epoch
+	}
+
+	return epoch
 }
 
 // GetEpochFromReferenceUnixTimestamp calculates the epoch based on a cron expression and a ref unix timestamp
 func (e *CronExpression) GetEpochFromReferenceUnixTimestamp(ref int64) int64 {
-	return int64(math.Floor(float64((ref-e.first.Unix())/int64(e.interval)))) + 1
+	epoch := e.lastEpochCached.epoch
+	since := e.lastEpochCached.timestamp
+
+	if ref >= e.lastEpochCached.timestamp.Unix() {
+		// TODO: I need to review the error condition handling, not serious because is a private function
+		ec, _ := calculateCurrentEpochSince(e.expr, since)
+		epoch = epoch + ec.epoch
+		since = ec.timestamp
+		e.lastEpochCached = epochCache{epoch: epoch, timestamp: since}
+	} else {
+		initUnix := time.Unix(0, 0).UTC()
+		// TODO: I need to review the error condition handling, not serious because is a private function
+		ec, _ := calculateCurrentEpochSince(e.expr, initUnix)
+		epoch = ec.epoch
+	}
+
+	return epoch
 }
 
 // GetNexFromNowUTC returns the next time after the current UTC timestamp

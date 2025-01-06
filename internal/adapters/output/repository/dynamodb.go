@@ -230,50 +230,6 @@ func (r *DynamoDBRepository) MinWithMetadata(entry string, leaderboard string, v
 	return domain.ScoreUpdate{Score: s.Score, Done: true, Counter: s.Counter}, nil
 }
 
-func (r *DynamoDBRepository) debugExpression(expr expression.Expression, meta domain.Metadata, entry string, leaderboard string) {
-	ctx, cancel := context.WithTimeoutCause(context.Background(), 1*time.Second, errors.New("get configuration timeout"))
-	defer cancel()
-
-	keyCond := expression.KeyAnd(
-		expression.Key(hashKeyName).Equal(expression.Value(pkValue(entry))),
-		expression.Key(sortKeyName).Equal(expression.Value(skValue(leaderboard))),
-	)
-	exprq, err := expression.NewBuilder().WithKeyCondition(keyCond).Build()
-	if err != nil {
-		panic(err)
-	}
-	input := dynamodb.QueryInput{
-		TableName:                 aws.String(r.tableName),
-		ExpressionAttributeNames:  exprq.Names(),
-		ExpressionAttributeValues: exprq.Values(),
-		KeyConditionExpression:    exprq.KeyCondition(),
-	}
-
-	out, err := r.client.Query(ctx, &input)
-	if err != nil {
-		panic(err)
-	}
-	var it []map[string]interface{}
-	err = attributevalue.UnmarshalListOfMaps(out.Items, &it)
-
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println("items:", it)
-
-	var v map[string]interface{}
-	attributevalue.UnmarshalMap(expr.Values(), &v)
-	fmt.Println()
-	fmt.Println()
-	if expr.Condition() != nil {
-
-		fmt.Println("condition:", *expr.Condition(), "names", expr.Names(), "values", v)
-	}
-	fmt.Println()
-	fmt.Println()
-}
-
 // LastWithMetadata ...
 func (r *DynamoDBRepository) LastWithMetadata(entry string, leaderboard string, value float64, meta domain.Metadata) (domain.ScoreUpdate, error) {
 	builder := expression.NewBuilder()
@@ -457,7 +413,6 @@ func (*DynamoDBRepository) builderFromMetadata(meta domain.Metadata) expression.
 				expression.And(
 					expression.AttributeExists(expression.Name(a)),
 					expression.Equal(expression.Name(a), expression.Value(v))))
-
 		}
 
 	}

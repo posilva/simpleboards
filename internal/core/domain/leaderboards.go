@@ -61,14 +61,14 @@ type LeaderboardScoreBoardConfig struct {
 
 type ResetExpression struct {
 	Type           LeaderboardResetType `json:"reset_type"`
-	CronExpression string               `json:"cron, omitempty"`
+	CronExpression string               `json:"cron,omitempty"`
 }
 
 // LeaderboardConfig holds information of a Leaderboard instance
 type LeaderboardConfig struct {
 	Name            string                        `json:"name"`
 	Function        LeaderboardFunctionType       `json:"function"`
-	ResetExpression ResetExpression               `json:"reset`
+	ResetExpression ResetExpression               `json:"reset"`
 	PrizeTable      LeaderboardPrizeTable         `json:"prizes_table"`
 	Scoreboards     []LeaderboardScoreBoardConfig `json:"scoreboards"`
 	CronExpression  CronExpression                `json:"-"`

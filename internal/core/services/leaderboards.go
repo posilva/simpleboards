@@ -49,7 +49,6 @@ func (s *LeaderboardsService) ReportScore(entryID string, name string, score flo
 
 // ReportScoreWithMetadata ...
 func (s *LeaderboardsService) ReportScoreWithMetadata(entryID string, name string, score float64, meta domain.Metadata) (domain.ReportScoreOutput, error) {
-
 	// ReportScore  register a new score to a given entry on a leaderboard
 	config, err := s.GetConfig(name)
 	if err != nil {
@@ -57,7 +56,6 @@ func (s *LeaderboardsService) ReportScoreWithMetadata(entryID string, name strin
 	}
 
 	leaderboard, epoch, err := GetLeaderboardNameWithEpoch(name, config.CronExpression)
-
 	if err != nil {
 		return domain.ReportScoreOutput{}, fmt.Errorf("failed to generate name from configs: %v", err)
 	}
@@ -75,7 +73,7 @@ func (s *LeaderboardsService) ReportScoreWithMetadata(entryID string, name strin
 			return domain.ReportScoreOutput{}, fmt.Errorf("failed to add score to scoreboard: %v", err)
 		}
 		// add to other scoreboards
-		if config.Scoreboards != nil && len(config.Scoreboards) > 0 {
+		if len(config.Scoreboards) > 0 {
 			for _, sb := range config.Scoreboards {
 				// TODO: we may enforce to exist the config fields in the meta for correctness
 				lb := s.sbNameFromType(name, epoch, sb, meta[sb.Field])
@@ -121,7 +119,6 @@ func (s *LeaderboardsService) applyFunction(entryID string, leaderboard string, 
 		}
 	}
 	return lbFn
-
 }
 
 // ListScoresWithMetadata returns a list of scores from leaderboards with metadata
@@ -152,7 +149,7 @@ func (s *LeaderboardsService) ListScoresWithMetadata(name string, meta domain.Me
 	}
 	allLeaderboardScores = append(allLeaderboardScores, resultScores)
 
-	if config.Scoreboards != nil && len(config.Scoreboards) > 0 {
+	if len(config.Scoreboards) > 0 {
 		for _, sb := range config.Scoreboards {
 			lb := s.sbNameFromType(name, epoch, sb, meta[sb.Field])
 			scores, err := s.scoreboard.Get(lb)
@@ -172,7 +169,6 @@ func (s *LeaderboardsService) ListScoresWithMetadata(name string, meta domain.Me
 		}
 	}
 	return allLeaderboardScores, epoch, nil
-
 }
 
 // ListScores returns a list of scores from leaderboards
@@ -211,7 +207,7 @@ func (s *LeaderboardsService) GetResultsWithMetadata(name string, epoch int64, m
 	}
 	allResults = append(allResults, resultScores)
 
-	if config.Scoreboards != nil && len(config.Scoreboards) > 0 {
+	if len(config.Scoreboards) > 0 {
 		for _, sb := range config.Scoreboards {
 			leaderboard = s.sbNameFromType(name, epoch, sb, meta[sb.Field])
 			scores, err := s.scoreboard.Get(leaderboard)
@@ -231,7 +227,6 @@ func (s *LeaderboardsService) GetResultsWithMetadata(name string, epoch int64, m
 
 			allResults = append(allResults, resultScores)
 		}
-
 	}
 
 	return allResults, nil
